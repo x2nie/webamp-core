@@ -1,0 +1,6 @@
+{
+  "rules": {
+    // TODO: Turn these all back on
+    "camelcase": "off"
+  }
+}
