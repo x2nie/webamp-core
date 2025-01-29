@@ -1,89 +1,72 @@
-[![gzip size](https://img.badgesize.io/https:/unpkg.com/webamp/built/webamp.lazy-bundle.min.js?label=gzip&compression=gzip)](https://bundlephobia.com/result?p=webamp)
-[![Tests](https://github.com/captbaritone/webamp/workflows/CI/badge.svg)](https://github.com/captbaritone/webamp/actions?query=branch%3Amaster+workflow%3ACI)
-[![Discord](https://img.shields.io/discord/434058775012311061.svg)](https://webamp.org/chat)
+## Running locally
 
-# Webamp
+Assuming you have [Yarn](https://yarnpkg.com/) installed:
 
-A reimplementation of Winamp 2.9 in HTML5 and JavaScript with full skin support. 
-As seen on [TechCrunch], [Motherboard], [Gizmodo], Hacker News ([1], [2], [3], [4]), and [elsewhere](./packages/webamp/docs/press.md).
-
-[![Screenshot of Webamp](https://raw.githubusercontent.com/captbaritone/webamp/master/packages/webamp/demo/images/preview.png)](https://webamp.org)
-
-Check out this [Twitter thread](https://twitter.com/captbaritone/status/961274714013319168) for an illustrated list of features. Works in modern versions of Edge, Firefox, Safari and Chrome. IE is [not supported](http://caniuse.com/#feat=audio-api).
-
-## Add Webamp to Your Site
-
-Here is the **most minimal** example of adding Webamp to a page:
-
-```HTML
-<div id="app"></div>
-<script src="https://unpkg.com/webamp"></script>
-<script>
-    const app = document.getElementById("app")
-    const webamp = new Webamp();
-    webamp.renderWhenReady(app);
-</script>
+```bash
+cd packages/webamp-modern
+yarn
+yarn start
 ```
 
-For more examples, including how to add audio files, check out [`examples/` directory](./examples) and the [API documentation](./packages/webamp/docs/usage.md).
+## Performance Improvements
 
-## About This Repository
+- [ ] We could use CSS `filter` to try to improve the speed of switching gamma colors?
+- [ ] We could use WebGL to try to improve the speed of switching gamma colors?
+- [x] We could use some CSS techniques to avoid having to appply inline style to each BitmapFont character's DOM node.
+- [ ] We should profile the parse phase to see what's taking time. Perhaps there's some sync image work that could be done lazily.
+- [ ] Remove some paranoid validation in the VM.
+- [ ] Consider throttling time updates coming from audio
+- [ ] Attach method binding on script init.
 
-Webamp uses a [monorepo](https://en.wikipedia.org/wiki/Monorepo) approach, so in addition to the Webamp NPM module, this repository contains code for a few closely related projects and some pieces of Webamp which are published as standalone modules:
+# TODO Next
 
-* [`packages/webamp`](https://github.com/captbaritone/webamp/tree/master/packages/webamp): The [Webamp NPM module](https://www.npmjs.com/package/webamp)
-* [`packages/webamp/demo`](https://github.com/captbaritone/webamp/tree/master/packages/webamp/demo): The demo site which lives at [webamp.org](https://webamp.org)
-* [`packages/ani-cursor`](https://github.com/captbaritone/webamp/tree/master/packages/ani-cursor): An NPM module for rendering animiated `.ani` cursors as CSS animations
-* [`packages/skin-database`](https://github.com/captbaritone/webamp/tree/master/packages/skin-database): The server component of https://skins.webamp.org which also runs our [Twitter bot](https://twitter.com/winampskins), and a Discord bot for our community chat
-* [`packages/skin-museum-client`](https://github.com/captbaritone/webamp/tree/master/packages/skin-museum-client): The front-end component of https://skins.webamp.org.
-* [`packages/winamp-eqf`](https://github.com/captbaritone/webamp/tree/master/packages/winamp-eqf): An NPM module for parsing and constructing Winamp equalizer preset files (`.eqf`)
-* [`packages/archive-org-webamp-integration-tests`](https://github.com/captbaritone/webamp/tree/master/packages/archive-org-webamp-integration-tests): An integration that confirms that archive.org's Webamp integration is working as expected
-* [`packages/webamp-modern`](https://github.com/captbaritone/webamp/tree/master/packages/webamp-modern): A prototype exploring rendering "modern" Winamp skins in the browser
-* [`examples`](https://github.com/captbaritone/webamp/tree/master/examples): A few examples showing how to use the NPM module
+- [ ] Implement event-listner-pool for native `on('eventname')`. It will improves readability & speed
+- [ ] Why doesn't scrolling work property in MMD3?
+- [x] Implement proper color
+    - [ ] Move gammacolor to GPU?
+- [ ] Requires VM
+    - [ ] Look at componentbucket (Where can I find the images)
+    - [ ] How is the scroll window for colors supposed to work?
+    - [ ] How is the position slider supposed to work?
+- [ ] Standardize handling of different type condition permutations in interpreter
+- [x] Implement EQ
+- [ ] Implament global actions
+    - [x] TOGGLE
+    - [ ] MINIMIZE
+- [x] Allow for skins which don't have gamma sets
+- [ ] Figure out if global NULL is actually typed as INT in Maki. I suspect there is no NULL type, but only an INT who happens to be zero.
+- [ ] Implement custom list instead of html `select`, so scrollbars can be rendered properly.
+- [ ] Fix all `// FIXME`
+- [ ] SystemObject.getruntimeversion
+- [ ] SystemObject.getskinname
+- [x] Handle clicking through transparent: Using css `clip-path`. ~~https://stackoverflow.com/questions/38487569/click-through-png-image-only-if-clicked-coordinate-is-transparent~~
 
-## Community
+# TODO Some day
 
-Join our community chat on Discord: <https://discord.gg/fBTDMqR>
+- [ ] Handle case (in)sensitivity of includes.
+- [ ] Handle forward/backward slashes issues (if they exist)
+- [ ] Draw in few canvases instead of huge HTML Elements
 
-Related communites:
+## Known Bugs
 
-- [Winamp Community Update Pack] - "New plug-ins to add additional features to Winamp as well as replacement plug-ins to provide better implementations of some of the plug-ins natively included with Winamp". ([Forum](https://getwacup.com/community/) / [Discord server](https://discord.gg/5pVTdbj))
+- [ ] In GuiObj's handling of left click, it's possible for the y/x of the click event to fall outside of the element being clicked. To repro click just above the volume2 of MMD3. Y can be one pixel above the clientBoundingRect of the element. Why?
 
-## In the Wild
+# Phases of Initialization
 
-An incomplete list of websites using Webamp:
+## Asset Parse
 
-- [Internet Archive](https://blog.archive.org/2018/10/02/dont-click-on-the-llama/) - The Internet Archive lets you preview winamp skins and listen to audio tracks using Webamp
-- [Winampify.io](https://winampify.io/) - An online Spotify client using Webamp
-- [Webamp Desktop](https://desktop.webamp.org/) - An Electron app version of Webamp
-- [98.js.org](https://98.js.org/) - A Windows 98 clone in JavaScript ([GitHub](https://github.com/1j01/98))
-- [winxp.now.sh](https://winxp.now.sh/) - A Windows XP clone in JavaScript with React ([GitHub](https://github.com/ShizukuIchi))
-- [Try Andy's Desk](https://desk.glitchy.website/) - A quirky Windows themed desktop experience.
-- [www.dkdomino.zone](https://www.dkdomino.zone/album.html) - Someone's personal music player
+Starting with `skin.xml`, and inlining each `<include />` we parse XML. As we go, we initialize GUI objects and attach them to their parent. During this phase we also encounter other asset files like Maki script, images, and fonts. These are parsed as they are encountered and setaside into a look-aside table (Maki scripts might live in the tree...).
 
-## Thanks
+This phase is `async` since it may require reading files from zip or doing image/font manipulation which is inherently `async`.
 
-- [Butterchurn](https://github.com/jberg/butterchurn), the amazing Milkdrop 2 WebGL implementation. Built and integrated into Webamp by: [jberg](https://github.com/jberg)
-- Research and feature prototyping: @PAEz
-- Beta feedback, catching many small UI inconsistencies: [LuigiHann](https://twitter.com/LuigiHann)
-- Beta feedback and insider answers to obscure Winamp questions: [Darren Owen](https://twitter.com/The_DoctorO)
-- Donating the `webamp` NPM module name: [Dave Eddy](http://daveeddy.com/)
+## Object Initialization
 
-Thank you to [Justin Frankel](http://www.1014.org/) and everyone at Nullsoft
-for Winamp which inspired so many of us.
+Once all look-aside tables are populated, we notify all GUI objects to initialize themselves by propogating from the root of the tree to the leaves. Each node is reponsible for notifying its children. In this phase components pull images/scripts/fonts out of their look-aside tables. [Question: Could these just be lazy?]. At this point we also hook up any event bindings/hooks that exist in Maki.
 
-## License
+## Maki Initialization
 
-While the Winamp name, interface, and, sample audio file are surely property of
-Nullsoft, the code within this project is released under the [MIT
-License](LICENSE.txt). That being said, if you do anything interesting with
-this code, please let me know. I'd love to see it.
+Once all nodes have been initialized, we trigger/dispatch `System.onScriptLoaded` for each Maki script.
 
-[techcrunch]: https://techcrunch.com/2018/02/09/whip-the-llamas-ass-with-this-javascript-winamp-emulator/
-[motherboard]: https://motherboard.vice.com/en_us/article/qvebbv/winamp-2-mp3-music-player-emulator
-[gizmodo]: https://gizmodo.com/winamp-2-has-been-immortalized-in-html5-for-your-pleasu-1655373653
-[1]: https://news.ycombinator.com/item?id=8565665
-[2]: https://news.ycombinator.com/item?id=15314629
-[3]: https://news.ycombinator.com/item?id=16333550
-[4]: https://news.ycombinator.com/item?id=17583997
-[winamp community update pack]: https://getwacup.com/
+## First paint
+
+Now we can begin panting 
