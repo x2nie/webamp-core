@@ -123,7 +123,7 @@ class MakiParser {
     const methods = this.readMethods(classes);
     const variables = this.readVariables({classes });
     this.readConstants({ variables });
-    const bindings = readBindings(makiFile, variables);
+    const bindings = this.readBindings(variables);
     const commands = decodeCode({ makiFile });
 
     // TODO: Assert that we are at the end of the maki file
@@ -399,6 +399,27 @@ class MakiParser {
   }
 
   
+  readBindings(variables: Variable[]): Binding[] {
+    const makiFile = this.makiFile
+    let block = this.newBlock()
+    let count = makiFile.readUInt32LE();
+    block.end({type:'count bindings', value:count})
+    const bindings = [];
+    while (count--) {
+      block = this.newBlock()
+      const variableOffset = makiFile.readUInt32LE();
+      const methodOffset = makiFile.readUInt32LE();
+      const binaryOffset = makiFile.readUInt32LE();
+      bindings.push({ variableOffset, binaryOffset, methodOffset });
+      const aclass = variables[variableOffset];
+      if (!aclass.events) {
+        aclass.events = [];
+      }
+      aclass.events.push(bindings.length - 1);
+      block.end({type:'binding', 'value': JSON.stringify(bindings[bindings.length-1]) })
+    }
+    return bindings;
+  }
 }
 
 // TODO: Don't depend upon COMMANDS
@@ -439,22 +460,6 @@ function readVersion(makiFile: MakiFile): number {
 
 
 
-function readBindings(makiFile: MakiFile, variables: Variable[]): Binding[] {
-  let count = makiFile.readUInt32LE();
-  const bindings = [];
-  while (count--) {
-    const variableOffset = makiFile.readUInt32LE();
-    const methodOffset = makiFile.readUInt32LE();
-    const binaryOffset = makiFile.readUInt32LE();
-    bindings.push({ variableOffset, binaryOffset, methodOffset });
-    const aclass = variables[variableOffset];
-    if (!aclass.events) {
-      aclass.events = [];
-    }
-    aclass.events.push(bindings.length - 1);
-  }
-  return bindings;
-}
 
 function decodeCode({ makiFile }) {
   const length = makiFile.readUInt32LE();
