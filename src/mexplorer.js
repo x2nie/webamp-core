@@ -116,7 +116,7 @@ main();
 //   (found / total) * 100
 // )}% Complete) | ${Math.round(((found - dummy) / total) * 100)}% Real.`;
 
-import { Component, useState, mount, xml, onWillStart, reactive } from "@odoo/owl";
+import { Component, useState, mount, xml, onWillStart, reactive, markup } from "@odoo/owl";
 
 function assureUrl(){
   const url = new URL(window.location.href);
@@ -139,10 +139,8 @@ class HexEdit extends Component {
         <div t-out="line" />
       </t>
     </div>
-    <div class="hex">
-      <t t-foreach="lines()" t-as="line" t-key="line_index">
-        <div t-out="line" />
-      </t>
+    <div class="hex" t-on-click="onClick">
+      <span t-out="hexs()" />
     </div>
     <div class="ascii">
         <span t-out="ascii()" />
@@ -162,6 +160,46 @@ class HexEdit extends Component {
     return lines
   }
 
+  hexs(){
+    // debugger
+    const {data, blocks} = this.env.binary
+    function hex(offset){
+      const byte = data[offset]
+      return byte.toString(16).padStart(2, "0").toUpperCase();
+    }
+    const rep = []; //? array of string, may contains <span>
+    let i = 0; let byte
+    blocks.forEach((block, block_index) => {
+      const {start, end} = block;
+
+      //? dormant
+      while(i< start){
+        rep.push(hex(i)+' ');
+        i++
+      }
+      rep.push(`<span class="hilite block-${block.type}" data-index="${block_index}">`)
+
+      let mid = []
+      while(i< end){
+        mid.push(hex(i));
+        i++
+      }
+      rep.push(mid.join(' ').trim())
+      // console.log( mid.join(' ').trim())
+      rep.push(`</span> `)
+      
+    });
+     //? dormant
+    while(i< data.length){
+      rep.push(hex(i)+' ');
+      i++
+    }
+    // const hex = data.map((b, index) =>
+    //   b >= 32 && b <= 126 ? String.fromCharCode(b) : "."
+    // )
+    return markup( rep.join(''))
+  }
+
   ascii(){
     // debugger
     const {data, blocks} = this.env.binary
@@ -169,6 +207,14 @@ class HexEdit extends Component {
       b >= 32 && b <= 126 ? String.fromCharCode(b) : "."
     )
     return ascii.join(' ')
+  }
+
+  onClick(ev){
+    
+    const span = ev.target.closest('.hilite');
+    if(span){
+
+    }
   }
 }
 

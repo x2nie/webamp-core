@@ -81,12 +81,19 @@ class MakiParser {
     const makiFile = this.makiFile;
 
     const magic = readMagic(makiFile);
+    
     // TODO: What format is this? Does it even change between compiler versions?
+    let block = this.newBlock()
     // Maybe it's the std.mi version?
     const version = readVersion(makiFile);
+    block.end({type:'version major',value:version})
+
     // Not sure what we are skipping over here. Just some UInt 32.
     // Maybe it's additional version info?
+    block = this.newBlock()
     const extraVersion = makiFile.readUInt32LE();
+    block.end({type:'version minor',value:extraVersion})
+
     const classes = this.readClasses();
     const methods = readMethods(makiFile, classes);
     const variables = readVariables({ makiFile, classes });
@@ -205,7 +212,7 @@ class MakiParser {
   readClasses(): string[] {
     let block = this.newBlock()
     let count = this.makiFile.readUInt32LE();
-    block.end({})
+    block.end({type:'count'})
     const classes = [];
     while (count--) {
       let identifier = "";
@@ -214,7 +221,7 @@ class MakiParser {
       while (chunks--) {
         identifier += this.makiFile.readUInt32LE().toString(16).padStart(8, "0");
       }
-      block.end({'class':identifier})
+      block.end({type:'class', 'class':identifier})
       classes.push(identifier);
     }
     return classes;
