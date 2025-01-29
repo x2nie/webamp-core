@@ -154,7 +154,7 @@ class HexEdit extends Component {
     // debugger
     const {data, blocks} = this.env.binary
     const lineCount = Math.ceil(data.length / 16)
-    const lines = [...Array(lineCount).keys()].map(n => (n * 16).toString(16).padStart(8, '0'))
+    const lines = [...Array(lineCount).keys()].map(n => (n * 16).toString(16).padStart(6, '0'))
     // console.log('lines:',lines)
     // this.state = useState({lines})
     return lines
@@ -165,7 +165,7 @@ class HexEdit extends Component {
     const {data, blocks} = this.env.binary
     function hex(offset){
       const byte = data[offset]
-      return byte.toString(16).padStart(2, "0").toUpperCase();
+      return byte.toString(16).padStart(2, "0");
     }
     const rep = []; //? array of string, may contains <span>
     let i = 0; let byte
@@ -203,10 +203,13 @@ class HexEdit extends Component {
   ascii(){
     // debugger
     const {data, blocks} = this.env.binary
-    const ascii = data.map(b =>
-      b >= 32 && b <= 126 ? String.fromCharCode(b) : "."
-    )
-    return ascii.join(' ')
+    const ascii = data.map((b, i) => {
+      let s = b >= 32 && b <= 126 ? String.fromCharCode(b) : ".";
+      if(i%16==15)
+        s += ' '
+      return s
+    })
+    return ascii.join('')
   }
 
   onClick(ev){
@@ -222,7 +225,10 @@ class BinTree extends Component {
   static template = xml`<div>
     Bintree
     <t t-foreach="env.binary.blocks" t-as="block" t-key="block_index">
-      <div t-out="block.start"/>
+      <div>
+        <span t-attf-class="block-#{block.type}" t-out="block.type" /> : 
+        <t  t-out="block.value" />
+      </div>
     </t>
   </div>`
 

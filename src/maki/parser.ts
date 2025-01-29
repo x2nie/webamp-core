@@ -212,7 +212,7 @@ class MakiParser {
   readClasses(): string[] {
     let block = this.newBlock()
     let count = this.makiFile.readUInt32LE();
-    block.end({type:'count'})
+    block.end({type:'count', value:count})
     const classes = [];
     while (count--) {
       let identifier = "";
@@ -221,7 +221,7 @@ class MakiParser {
       while (chunks--) {
         identifier += this.makiFile.readUInt32LE().toString(16).padStart(8, "0");
       }
-      block.end({type:'class', 'class':identifier})
+      block.end({type:'class', 'value':identifier})
       classes.push(identifier);
     }
     return classes;
