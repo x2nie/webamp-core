@@ -3,6 +3,7 @@ import { DataType, Variable, VariableObject } from "./v";
 import MakiFile from "./MakiFile";
 import { getMethod, getReturnType } from "./objects";
 import { assert } from "../utils";
+import { classResolver } from "../skin/resolver";
 
 export type Command = {
   opcode: number;
@@ -41,6 +42,30 @@ const PRIMITIVE_TYPES = {
   4: "DOUBLE",
   6: "STRING",
 };
+
+const knownContainerGuids = {
+  "{0000000a-000c-0010-ff7b-01014263450c}": "[VIS]", // visualization
+  "{45f3f7c1-a6f3-4ee6-a15e-125e92fc3f8d}": "[PL]", // playlist editor
+  "{6b0edf80-c9a5-11d3-9f26-00c04f39ffc6}": "[ML]", // media library
+  "{7383a6fb-1d01-413b-a99a-7e6f655f4591}": "[CON]", // config?
+  "{7a8b2d76-9531-43b9-91a1-ac455a7c8242}": "[LIR]", // lyric?
+  "{a3ef47bd-39eb-435a-9fb3-a5d87f6f17a5}": "[DL]", // download??
+  "{f0816d7b-fffc-4343-80f2-e8199aa15cc3}": "[VIDEO]", // independent video window
+};
+
+function getClassId(guid: string): string {
+  const known = knownContainerGuids[guid];
+  if (known) {
+    return known;
+  }
+  try {
+    const cls: Function = classResolver(guid);
+    return cls.prototype.constructor.name;
+  } catch (e) {
+    return "--unknown--";
+  }
+}
+
 
 class Block {
   data: {[name:string]:any}
@@ -96,7 +121,7 @@ class MakiParser {
 
     const classes = this.readClasses();
     const methods = this.readMethods(classes);
-    const variables = readVariables({ makiFile, classes });
+    const variables = this.readVariables({classes });
     readConstants({ makiFile, variables });
     const bindings = readBindings(makiFile, variables);
     const commands = decodeCode({ makiFile });
@@ -252,9 +277,108 @@ class MakiParser {
       const returnType = getReturnType(className, name);
   
       methods.push({ name, typeOffset, returnType });
-      block.end({type:'method', 'value':name})
+      block.end({type:'method', 'value':`${getClassId(className)}.${name}` })
     }
     return methods;
+  }
+
+
+
+  readVariables({ classes }) {
+    const makiFile = this.makiFile;
+    let block = this.newBlock()
+    let count = makiFile.readUInt32LE();
+    const variables: Variable[] = [];
+    block.end({type:'count variables', value:count})
+
+    while (count--) {
+      block = this.newBlock()
+      const typeOffset = makiFile.readUInt8();
+      const object = makiFile.readUInt8();
+      const subClass = makiFile.readUInt16LE();
+      const uinit1 = makiFile.readUInt16LE();
+      const uinit2 = makiFile.readUInt16LE();
+      makiFile.readUInt16LE(); // uinit3
+      makiFile.readUInt16LE(); //uinit4
+      const global = makiFile.readUInt8();
+      makiFile.readUInt8(); // system
+
+      if (subClass) {
+        const variable = variables[typeOffset] as VariableObject;
+        if (variable == null) {
+          throw new Error("Invalid type");
+        } else {
+          // it is a subclassing, so let's mark inheritor as CLASS (base class)
+          if (!variable.members) {
+            variable.isClass = true;
+            // variable.type = 'CLASS';
+            variable.members = [];
+            variable.events = []; //method indexes
+          }
+        }
+
+        // assume(false, "Unimplemented subclass variable type");
+        variables.push({
+          type: "OBJECT",
+          value: null,
+          global,
+          guid: variable.guid,
+          offset: variables.length,
+        });
+        const index = variables.length - 1;
+
+        if (!variable.members.includes(index)) {
+          variable.members.push(index);
+        }
+      } else if (object) {
+        const klass = classes[typeOffset];
+        if (klass == null) {
+          throw new Error("Invalid type");
+        }
+        variables.push({ type: "OBJECT", value: null, global, guid: klass, offset: variables.length });
+      } else {
+        const typeName = PRIMITIVE_TYPES[typeOffset];
+        if (typeName == null) {
+          throw new Error("Invalid type");
+        }
+        let value = null;
+
+        switch (typeName) {
+          // BOOL
+          case PRIMITIVE_TYPES[5]:
+            value = uinit1;
+            assert(
+              value === 1 || value === 0,
+              "Expected boolean value to be initialized as zero or one"
+            );
+            break;
+          // INT
+          case PRIMITIVE_TYPES[2]:
+            value = uinit1;
+            break;
+          case PRIMITIVE_TYPES[3]:
+          case PRIMITIVE_TYPES[4]:
+            const exponent = (uinit2 & 0xff80) >> 7;
+            const mantisse = ((0x80 | (uinit2 & 0x7f)) << 16) | uinit1;
+            value = mantisse * 2.0 ** (exponent - 0x96);
+            break;
+          case PRIMITIVE_TYPES[6]:
+            // This will likely get set by constants later on.
+            break;
+          default:
+            throw new Error("Invalid primitive type");
+        }
+        const variable = {
+          global,
+          type: typeName,
+          value,
+          offset:variables.length,
+        };
+        variables.push(variable);
+      }
+      block.end({type:'variable', 'value': JSON.stringify(variables[variables.length-1]) })
+    }
+    return variables;
   }
   
 }
@@ -296,97 +420,6 @@ function readVersion(makiFile: MakiFile): number {
 
 
 
-
-function readVariables({ makiFile, classes }) {
-  let count = makiFile.readUInt32LE();
-  const variables: Variable[] = [];
-  while (count--) {
-    const typeOffset = makiFile.readUInt8();
-    const object = makiFile.readUInt8();
-    const subClass = makiFile.readUInt16LE();
-    const uinit1 = makiFile.readUInt16LE();
-    const uinit2 = makiFile.readUInt16LE();
-    makiFile.readUInt16LE(); // uinit3
-    makiFile.readUInt16LE(); //uinit4
-    const global = makiFile.readUInt8();
-    makiFile.readUInt8(); // system
-
-    if (subClass) {
-      const variable = variables[typeOffset] as VariableObject;
-      if (variable == null) {
-        throw new Error("Invalid type");
-      } else {
-        // it is a subclassing, so let's mark inheritor as CLASS (base class)
-        if (!variable.members) {
-          variable.isClass = true;
-          // variable.type = 'CLASS';
-          variable.members = [];
-          variable.events = []; //method indexes
-        }
-      }
-
-      // assume(false, "Unimplemented subclass variable type");
-      variables.push({
-        type: "OBJECT",
-        value: null,
-        global,
-        guid: variable.guid,
-        offset: variables.length,
-      });
-      const index = variables.length - 1;
-
-      if (!variable.members.includes(index)) {
-        variable.members.push(index);
-      }
-    } else if (object) {
-      const klass = classes[typeOffset];
-      if (klass == null) {
-        throw new Error("Invalid type");
-      }
-      variables.push({ type: "OBJECT", value: null, global, guid: klass, offset: variables.length });
-    } else {
-      const typeName = PRIMITIVE_TYPES[typeOffset];
-      if (typeName == null) {
-        throw new Error("Invalid type");
-      }
-      let value = null;
-
-      switch (typeName) {
-        // BOOL
-        case PRIMITIVE_TYPES[5]:
-          value = uinit1;
-          assert(
-            value === 1 || value === 0,
-            "Expected boolean value to be initialized as zero or one"
-          );
-          break;
-        // INT
-        case PRIMITIVE_TYPES[2]:
-          value = uinit1;
-          break;
-        case PRIMITIVE_TYPES[3]:
-        case PRIMITIVE_TYPES[4]:
-          const exponent = (uinit2 & 0xff80) >> 7;
-          const mantisse = ((0x80 | (uinit2 & 0x7f)) << 16) | uinit1;
-          value = mantisse * 2.0 ** (exponent - 0x96);
-          break;
-        case PRIMITIVE_TYPES[6]:
-          // This will likely get set by constants later on.
-          break;
-        default:
-          throw new Error("Invalid primitive type");
-      }
-      const variable = {
-        global,
-        type: typeName,
-        value,
-        offset:variables.length,
-      };
-      variables.push(variable);
-    }
-  }
-  return variables;
-}
 
 function readConstants({ makiFile, variables }) {
   let count = makiFile.readUInt32LE();
