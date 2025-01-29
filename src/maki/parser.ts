@@ -122,7 +122,7 @@ class MakiParser {
     const classes = this.readClasses();
     const methods = this.readMethods(classes);
     const variables = this.readVariables({classes });
-    readConstants({ makiFile, variables });
+    this.readConstants({ variables });
     const bindings = readBindings(makiFile, variables);
     const commands = decodeCode({ makiFile });
 
@@ -380,6 +380,24 @@ class MakiParser {
     }
     return variables;
   }
+
+
+  readConstants({ variables }) {
+    let block = this.newBlock()
+    let count = this.makiFile.readUInt32LE();
+    block.end({type:'count RESSTRING', value:count})
+    while (count--) {
+      block = this.newBlock()
+      const i = this.makiFile.readUInt32LE();
+      const variable = variables[i];
+      // TODO: Assert this is of type string.
+      const value = this.makiFile.readString();
+      // TODO: Don't mutate
+      variable.value = value;
+      block.end({type:'const',value})
+    }
+  }
+
   
 }
 
@@ -420,18 +438,6 @@ function readVersion(makiFile: MakiFile): number {
 
 
 
-
-function readConstants({ makiFile, variables }) {
-  let count = makiFile.readUInt32LE();
-  while (count--) {
-    const i = makiFile.readUInt32LE();
-    const variable = variables[i];
-    // TODO: Assert this is of type string.
-    const value = makiFile.readString();
-    // TODO: Don't mutate
-    variable.value = value;
-  }
-}
 
 function readBindings(makiFile: MakiFile, variables: Variable[]): Binding[] {
   let count = makiFile.readUInt32LE();
