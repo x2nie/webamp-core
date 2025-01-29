@@ -63,7 +63,7 @@ const url = new URL(window.location.href);
 let makiPath = url.searchParams.get("maki"); // "some_value"
 console.log("maki:", makiPath);
 if (!makiPath) {
-  makiPath = "/assets/MMD3/scripts/songinfo.maki";
+  makiPath = "/assets/skins/MMD3/scripts/songinfo.maki";
   url.searchParams.set("maki", makiPath);
   window.history.pushState({ pageTitle: "title" }, "title", url);
   // window.location.assign(url.href)
