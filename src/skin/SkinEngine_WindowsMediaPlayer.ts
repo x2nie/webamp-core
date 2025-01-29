@@ -1,5 +1,5 @@
-import parseXml, { XmlDocument, XmlElement } from "@rgrove/parse-xml";
-import Parser from "@rgrove/parse-xml/src/lib/Parser";
+// import parseXml, { XmlDocument, XmlElement } from "@rgrove/parse-xml";
+// import Parser from "@rgrove/parse-xml/src/lib/Parser";
 import JSZip from "jszip";
 import { UIRoot } from "../UIRoot";
 // import { decodeWideChars } from "../utils";
@@ -21,6 +21,8 @@ import TextZ from "./wmpClasses/Text";
 import Theme from "./wmpClasses/Theme";
 import View from "./wmpClasses/View";
 import VisZ from "./wmpClasses/Vis";
+import { Parser } from "@lib/xml";
+import { XmlDocument } from "@rgrove/parse-xml";
 
 export type Attributes = {
   [key: string]: string;

@@ -35,6 +35,14 @@ export type Binding = {
   binaryOffset: number;
 };
 
+export type Block = {
+  start: number;
+  end: number;
+  color?: string;
+  description?: string;
+  blocks?: Block[];
+}
+
 const MAGIC = "FG";
 
 const PRIMITIVE_TYPES = {
@@ -73,6 +81,7 @@ let constants: any[] = [];
 let classes: string[] = [];
 let bindings: Binding[] = [];
 let classAliases: { [key: string]: string } = {};
+
 export function parse(data: ArrayBuffer): ParsedMaki {
   const makiFile = new MakiFile(data);
 

@@ -42,6 +42,25 @@ const PRIMITIVE_TYPES = {
   6: "STRING",
 };
 
+class Block {
+  data: {[name:string]:any}
+  makifle: MakiFile;
+  
+  constructor(data:{[name:string]:any}={}) {
+    this.data = data;
+  }
+
+  end(data:{[name:string]:any}={}) {
+    this.data.end = this.makifle._i;
+    this.data = {...this.data, ...data}
+  }
+
+  // Menyediakan representasi serializable dari data
+  toJSON() {
+    return this.data;
+  }
+}
+
 export function parse(
   data: ArrayBuffer,
   maki_id_or_filepath: string
@@ -52,6 +71,7 @@ export function parse(
 
 class MakiParser {
   makiFile: MakiFile;
+  blocks : Block[] = [];
 
   constructor(data: ArrayBuffer, private file_id: string) {
     this.makiFile = new MakiFile(data);
@@ -67,7 +87,7 @@ class MakiParser {
     // Not sure what we are skipping over here. Just some UInt 32.
     // Maybe it's additional version info?
     const extraVersion = makiFile.readUInt32LE();
-    const classes = readClasses(makiFile);
+    const classes = this.readClasses();
     const methods = readMethods(makiFile, classes);
     const variables = readVariables({ makiFile, classes });
     readConstants({ makiFile, variables });
@@ -159,7 +179,11 @@ class MakiParser {
     //   }
     // }
 
+    const blocks = JSON.parse(JSON.stringify(this.blocks))
+
     return {
+      // blocks: this.blocks,
+      blocks,
       classes,
       methods,
       variables,
@@ -168,6 +192,32 @@ class MakiParser {
       version,
       maki_id: this.file_id,
     };
+  }
+
+  newBlock():Block{
+    const b = new Block()
+    b.data.start = this.makiFile._i;
+    b.makifle = this.makiFile;
+    this.blocks.push(b)
+    return b;
+  }
+
+  readClasses(): string[] {
+    let block = this.newBlock()
+    let count = this.makiFile.readUInt32LE();
+    block.end({})
+    const classes = [];
+    while (count--) {
+      let identifier = "";
+      let chunks = 4;
+      block = this.newBlock()
+      while (chunks--) {
+        identifier += this.makiFile.readUInt32LE().toString(16).padStart(8, "0");
+      }
+      block.end({'class':identifier})
+      classes.push(identifier);
+    }
+    return classes;
   }
 }
 
@@ -206,19 +256,7 @@ function readVersion(makiFile: MakiFile): number {
   return makiFile.readUInt16LE();
 }
 
-function readClasses(makiFile: MakiFile): string[] {
-  let count = makiFile.readUInt32LE();
-  const classes = [];
-  while (count--) {
-    let identifier = "";
-    let chunks = 4;
-    while (chunks--) {
-      identifier += makiFile.readUInt32LE().toString(16).padStart(8, "0");
-    }
-    classes.push(identifier);
-  }
-  return classes;
-}
+
 
 function readMethods(makiFile: MakiFile, classes: string[]): Method[] {
   let count = makiFile.readUInt32LE();

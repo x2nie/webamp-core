@@ -12,6 +12,7 @@
         html {
             margin: 0;
             padding: 0;
+            font-family: Arial, sans-serif;
         }
 
         h1 {
@@ -24,6 +25,28 @@
             width: calc((100% - 200px) / 2);
             float: left;
         }
+        body > div {
+            height: 50vh;
+            overflow: auto;
+        }
+
+        .hexedit{
+            display: flex;
+            /* background-color: skyblue; */
+            
+        }
+        .hexedit > div{
+            /* border: 2px solid blue; */
+            padding: 5px;
+            font-family: monospace, 'Courier New', Courier;
+        }
+        .hex {
+            width: calc(16 * 3ch);
+        }
+        .ascii {
+            width: calc(16 * 1ch);
+        }
+
 
         #panel {
             display: inline-block;
@@ -34,13 +57,13 @@
 </head>
 
 <body>
-    <div class="editor" id="editor1"></div>
-    <div class="editor" id="editor2"></div>
-    <div id="panel">
+    <!-- <div class="editor" id="editor1"></div> -->
+    <!-- <div class="editor" id="editor2"></div> -->
+    <!-- <div id="panel">
         <h1>Maki File Explorer</h1>
 
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js"></script>
+    </div> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js"></script> -->
     <script type="module" src="./mexplorer.js"></script>
 </body>
 
