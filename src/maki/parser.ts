@@ -124,7 +124,7 @@ class MakiParser {
     const variables = this.readVariables({classes });
     this.readConstants({ variables });
     const bindings = this.readBindings(variables);
-    const commands = decodeCode({ makiFile });
+    const commands = this.decodeCode();
 
     // TODO: Assert that we are at the end of the maki file
     if (!makiFile.isEof()) {
@@ -420,6 +420,76 @@ class MakiParser {
     }
     return bindings;
   }
+
+
+
+
+  decodeCode() {
+    const makiFile = this.makiFile
+    let block = this.newBlock()
+    const length = makiFile.readUInt32LE();
+    block.end({type:'length commands', value: `${length} bytes` })
+
+    const commands = [];
+    const start = makiFile.getPosition();
+    while (makiFile.getPosition() < start + length) {
+      block = this.newBlock()
+      commands.push(this.parseComand({ start, makiFile, length }));
+      block.end({type:'command', 'value': JSON.stringify(commands[commands.length-1]) })
+    }
+
+    return commands;
+  }
+
+  // TODO: Refactor this to consume bytes directly off the end of MakiFile
+  parseComand({ start, makiFile, length }) {
+    const pos = makiFile.getPosition() - start;
+    const opcode = makiFile.readUInt8();
+    const command = {
+      offset: pos,
+      start,
+      opcode,
+      arg: null,
+      argType: opcodeToArgType(opcode),
+    };
+
+    if (command.argType === "NONE") {
+      return command;
+    }
+
+    let arg = null;
+    switch (command.argType) {
+      case "COMMAND_OFFSET":
+        // Note in the perl code here: "todo, something strange going on here..."
+        arg = makiFile.readInt32LE() + 5 + pos;
+        break;
+      case "VARIABLE_OFFSET":
+        arg = makiFile.readUInt32LE();
+        break;
+      default:
+        throw new Error("Invalid argType");
+    }
+
+    command.arg = arg;
+
+    // From perl: look forward for a stack protection block
+    // (why do I have to look FORWARD. stupid nullsoft)
+    if (
+      // Is there another UInt32 to read?
+      length > pos + 5 + 4 &&
+      makiFile.peekUInt32LE() >= 0xffff0000 &&
+      makiFile.peekUInt32LE() <= 0xffff000f
+    ) {
+      makiFile.readUInt32LE();
+    }
+
+    // TODO: What even is this?
+    if (opcode === 112 /* strangeCall */) {
+      makiFile.readUInt8();
+    }
+    return command;
+  }
+
 }
 
 // TODO: Don't depend upon COMMANDS
@@ -458,66 +528,3 @@ function readVersion(makiFile: MakiFile): number {
 }
 
 
-
-
-
-function decodeCode({ makiFile }) {
-  const length = makiFile.readUInt32LE();
-  const start = makiFile.getPosition();
-
-  const commands = [];
-  while (makiFile.getPosition() < start + length) {
-    commands.push(parseComand({ start, makiFile, length }));
-  }
-
-  return commands;
-}
-
-// TODO: Refactor this to consume bytes directly off the end of MakiFile
-function parseComand({ start, makiFile, length }) {
-  const pos = makiFile.getPosition() - start;
-  const opcode = makiFile.readUInt8();
-  const command = {
-    offset: pos,
-    start,
-    opcode,
-    arg: null,
-    argType: opcodeToArgType(opcode),
-  };
-
-  if (command.argType === "NONE") {
-    return command;
-  }
-
-  let arg = null;
-  switch (command.argType) {
-    case "COMMAND_OFFSET":
-      // Note in the perl code here: "todo, something strange going on here..."
-      arg = makiFile.readInt32LE() + 5 + pos;
-      break;
-    case "VARIABLE_OFFSET":
-      arg = makiFile.readUInt32LE();
-      break;
-    default:
-      throw new Error("Invalid argType");
-  }
-
-  command.arg = arg;
-
-  // From perl: look forward for a stack protection block
-  // (why do I have to look FORWARD. stupid nullsoft)
-  if (
-    // Is there another UInt32 to read?
-    length > pos + 5 + 4 &&
-    makiFile.peekUInt32LE() >= 0xffff0000 &&
-    makiFile.peekUInt32LE() <= 0xffff000f
-  ) {
-    makiFile.readUInt32LE();
-  }
-
-  // TODO: What even is this?
-  if (opcode === 112 /* strangeCall */) {
-    makiFile.readUInt8();
-  }
-  return command;
-}

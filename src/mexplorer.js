@@ -226,6 +226,9 @@ class BinTree extends Component {
     Bintree
     <t t-foreach="env.binary.blocks" t-as="block" t-key="block_index">
       <div>
+        <!-- <t  t-out="block.end - block.start" /> @ -->
+        <!-- <t  t-out="block.start" /> -->
+        <t  t-out="address(block)" />
         <span t-attf-class="block-#{block.type}" t-out="block.type" /> : 
         <t  t-out="block.value" />
       </div>
@@ -234,6 +237,12 @@ class BinTree extends Component {
 
   setup(){
     this.blocks = useState(this.env.binary.blocks)
+  }
+
+  address(block){
+    const len = (block.end - block.start).toString(10).padStart(3, '_')
+    const at = block.start.toString(16).padStart(6, '0')
+    return markup(`<code>${len} @ ${at} </code> `)
   }
 }
 
