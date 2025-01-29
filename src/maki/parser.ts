@@ -95,7 +95,7 @@ class MakiParser {
     block.end({type:'version minor',value:extraVersion})
 
     const classes = this.readClasses();
-    const methods = readMethods(makiFile, classes);
+    const methods = this.readMethods(classes);
     const variables = readVariables({ makiFile, classes });
     readConstants({ makiFile, variables });
     const bindings = readBindings(makiFile, variables);
@@ -226,6 +226,37 @@ class MakiParser {
     }
     return classes;
   }
+
+  readMethods(classes: string[]): Method[] {
+    const makiFile = this.makiFile;
+    let block = this.newBlock()
+    let count = makiFile.readUInt32LE();
+    block.end({type:'count', value:count})
+  
+    const methods: Method[] = [];
+    while (count--) {
+      block = this.newBlock()
+      const classCode = makiFile.readUInt16LE();
+      // Offset into our parsed types
+      const typeOffset = classCode & 0xff;
+      // This is probably the second half of a uint32
+      makiFile.readUInt16LE();
+      let name = makiFile.readString(); //x2nie .toLowerCase();
+      
+      const className = classes[typeOffset];
+  
+      // lets resolve the correct caseSensitiveName here
+      const method = getMethod(className, name)
+      name = method.name;
+  
+      const returnType = getReturnType(className, name);
+  
+      methods.push({ name, typeOffset, returnType });
+      block.end({type:'method', 'value':name})
+    }
+    return methods;
+  }
+  
 }
 
 // TODO: Don't depend upon COMMANDS
@@ -265,29 +296,6 @@ function readVersion(makiFile: MakiFile): number {
 
 
 
-function readMethods(makiFile: MakiFile, classes: string[]): Method[] {
-  let count = makiFile.readUInt32LE();
-  const methods: Method[] = [];
-  while (count--) {
-    const classCode = makiFile.readUInt16LE();
-    // Offset into our parsed types
-    const typeOffset = classCode & 0xff;
-    // This is probably the second half of a uint32
-    makiFile.readUInt16LE();
-    let name = makiFile.readString(); //x2nie .toLowerCase();
-    
-    const className = classes[typeOffset];
-
-    // lets resolve the correct caseSensitiveName here
-    const method = getMethod(className, name)
-    name = method.name;
-
-    const returnType = getReturnType(className, name);
-
-    methods.push({ name, typeOffset, returnType });
-  }
-  return methods;
-}
 
 function readVariables({ makiFile, classes }) {
   let count = makiFile.readUInt32LE();
