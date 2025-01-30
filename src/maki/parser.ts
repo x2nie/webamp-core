@@ -69,17 +69,27 @@ function getClassId(guid: string): string {
 
 class Block {
   data: {[name:string]:any}
-  makifle: MakiFile;
+  makiFile: MakiFile;
   
   constructor(data:{[name:string]:any}={}) {
     this.data = data;
   }
 
   end(data:{[name:string]:any}={}) {
-    this.data.end = this.makifle._i;
+    this.data.end = this.makiFile._i;
     this.data = {...this.data, ...data}
   }
 
+  newChild(data:{[name:string]:any}={}):Block{
+    const child = new Block({type:'prop', ...data})
+    child.data.start = this.makiFile._i;
+    child.makiFile = this.makiFile;
+    if(!this.data.children){
+      this.data.children = []
+    }
+    this.data.children.push(child)
+    return child
+  }
   // Menyediakan representasi serializable dari data
   toJSON() {
     return this.data;
@@ -229,7 +239,7 @@ class MakiParser {
   newBlock():Block{
     const b = new Block()
     b.data.start = this.makiFile._i;
-    b.makifle = this.makiFile;
+    b.makiFile = this.makiFile;
     this.blocks.push(b)
     return b;
   }
@@ -261,12 +271,20 @@ class MakiParser {
     const methods: Method[] = [];
     while (count--) {
       block = this.newBlock()
+      const c1 = block.newChild({})
       const classCode = makiFile.readUInt16LE();
+      c1.end({name:'classCode', value:classCode.toString(16)})
       // Offset into our parsed types
       const typeOffset = classCode & 0xff;
+
+      const c2 = block.newChild({})
       // This is probably the second half of a uint32
-      makiFile.readUInt16LE();
+      const unknown1 = makiFile.readUInt16LE();
+      c2.end({name: 'unknown', value:unknown1})
+      
+      const c3 = block.newChild({})
       let name = makiFile.readString(); //x2nie .toLowerCase();
+      c3.end({name: 'string', value:name})
       
       const className = classes[typeOffset];
   

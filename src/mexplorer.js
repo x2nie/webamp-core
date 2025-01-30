@@ -151,6 +151,7 @@ class HexEdit extends Component {
   }
 
   lines(){
+    //? render line number, in hex
     // debugger
     const {data, blocks} = this.env.binary
     const lineCount = Math.ceil(data.length / 16)
@@ -161,6 +162,7 @@ class HexEdit extends Component {
   }
 
   hexs(){
+    //? render hexadecimal representation
     // debugger
     const {data, blocks} = this.env.binary
     function hex(offset){
@@ -201,6 +203,7 @@ class HexEdit extends Component {
   }
 
   ascii(){
+    //? render ascii (human readable) representation
     // debugger
     const {data, blocks} = this.env.binary
     const ascii = data.map((b, i) => {
@@ -225,12 +228,26 @@ class BinTree extends Component {
   static template = xml`<div>
     Bintree
     <t t-foreach="env.binary.blocks" t-as="block" t-key="block_index">
-      <div>
+      <div t-attf-id="tree-#{block_index}" class="tree-item" t-att-data_index="block_index">
         <!-- <t  t-out="block.end - block.start" /> @ -->
         <!-- <t  t-out="block.start" /> -->
         <t  t-out="address(block)" />
-        <span t-attf-class="block-#{block.type}" t-out="block.type" /> : 
-        <t  t-out="block.value" />
+        <span t-attf-class="block-#{block.type}" t-out="block.type" />  
+        <span t-if="block.children" class="toggle" t-on-click="toggleChildren">
+          <t t-if="block.expanded" t-out="'⯆'"/>
+          <t t-else="" t-out="'⯈'"/>
+        </span>
+        <t t-else="">:</t>
+        <div class="inline">
+          <div t-out="block.value" />
+          <t t-if="block.expanded"> 
+            <t t-foreach="block.children" t-as="child" t-key="child_index">
+              <span t-attf-class="block-#{child.type}" t-out="child.name" /> :
+              <t  t-out="child.value" /><br/>
+            </t>
+          </t>
+            
+        </div>
       </div>
     </t>
   </div>`
@@ -243,6 +260,13 @@ class BinTree extends Component {
     const len = (block.end - block.start).toString(10).padStart(3, '_')
     const at = block.start.toString(16).padStart(6, '0')
     return markup(`<code>${len} @ ${at} </code> `)
+  }
+
+  toggleChildren(ev){
+    const el = ev.target.closest('.tree-item');
+    const index = el.attributes.data_index.value
+    const block = this.blocks[index]
+    block.expanded = ! block.expanded
   }
 }
 
