@@ -240,6 +240,7 @@ class BinTree extends Component {
           <t t-else="" t-out="'⯈'"/>
         </span>
         <span t-else="">: </span>
+        <t t-if="!block.type.startsWith('count')" t-out="'#' + block.index"/>
         <div class="inline">
           <div t-out="block.value" class="toggle" t-on-click="toggleChildren" />
           <t t-if="block.expanded"> 

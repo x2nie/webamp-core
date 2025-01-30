@@ -108,6 +108,12 @@ class MakiParser {
   makiFile: MakiFile;
   blocks : Block[] = [];
 
+  findBlock(type:string, index:int):Block{
+    const result = this.blocks.find(b => b.data.type==type && b.data.index == index) || {}
+    // debugger
+    return result
+  }
+
   constructor(data: ArrayBuffer, private file_id: string) {
     this.makiFile = new MakiFile(data);
   }
@@ -260,7 +266,7 @@ class MakiParser {
       }
       const GUID = getFormattedId(identifier)
       classes.push(identifier);
-      block.end({type:'class', 'value': `#${i++} ${GUID} (${getClassId(identifier)})`})
+      block.end({index: i++, type:'class', 'value': `${GUID} (${getClassId(identifier)})`})
       // alias.end({name:'alias', value: getClassId(identifier)})
     }
     return classes;
@@ -273,6 +279,7 @@ class MakiParser {
     block.end({type:'count', value:count})
   
     const methods: Method[] = [];
+    let i = 0;
     while (count--) {
       block = this.newBlock()
       let c1 = block.newChild({})
@@ -305,7 +312,7 @@ class MakiParser {
       const returnType = getReturnType(className, name);
   
       methods.push({ name, typeOffset, returnType });
-      block.end({type:'method', 'value':`${getClassId(className)}.${name}` })
+      block.end({index: i++, type:'method', 'value':`${getClassId(className)}.${name}` })
     }
     return methods;
   }
@@ -436,9 +443,9 @@ class MakiParser {
       // block.end({type:'variable', 'value': JSON.stringify(variables[variables.length-1]) })
       const my = {...variables[variables.length-1]}
       delete my['offset']
-      block.end({
+      block.end({ index: i++,
         type:'variable', 
-        'value': `#${i++} ${global? 'GLOBAL ':''}${my.type.toLowerCase()} (${my.value}) `
+        'value': `${global? 'GLOBAL ':''}${my.type.toLowerCase()} (${my.value}) `
           +`${my.guid ? '['+ getClassId(my.guid) +']' : '' }  `
           // +JSON.stringify(my)
       })
@@ -451,15 +458,16 @@ class MakiParser {
     let block = this.newBlock()
     let count = this.makiFile.readUInt32LE();
     block.end({type:'count RESSTRING', value:count})
+    let i = 0;
     while (count--) {
       block = this.newBlock()
-      const i = this.makiFile.readUInt32LE();
-      const variable = variables[i];
+      const n = this.makiFile.readUInt32LE();
+      const variable = variables[n];
       // TODO: Assert this is of type string.
       const value = this.makiFile.readString();
       // TODO: Don't mutate
       variable.value = value;
-      block.end({type:'const',value:`"${value}"`})
+      block.end({ index: i++, type:'const',value:`"${value}"`})
     }
   }
 
@@ -470,18 +478,29 @@ class MakiParser {
     let count = makiFile.readUInt32LE();
     block.end({type:'count bindings', value:count})
     const bindings = [];
+    let i = 0;
     while (count--) {
       block = this.newBlock()
+
+      let c = block.newChild({})
       const variableOffset = makiFile.readUInt32LE();
+      c.end({name:'variable index', value: variableOffset + ` | ${this.findBlock('variable', variableOffset).data.value}`})
+      
+      c = block.newChild({})
       const methodOffset = makiFile.readUInt32LE();
+      c.end({name:'method index', value: methodOffset + ` | ${this.findBlock('method', methodOffset).data.value}`})
+      
+      c = block.newChild({})
       const binaryOffset = makiFile.readUInt32LE();
+      c.end({name:'binary offset', value: binaryOffset})
+
       bindings.push({ variableOffset, binaryOffset, methodOffset });
       const aclass = variables[variableOffset];
       if (!aclass.events) {
         aclass.events = [];
       }
       aclass.events.push(bindings.length - 1);
-      block.end({type:'binding', 'value': JSON.stringify(bindings[bindings.length-1]) })
+      block.end({index: i++, type:'binding', 'value': JSON.stringify(bindings[bindings.length-1]) })
     }
     return bindings;
   }
@@ -493,14 +512,15 @@ class MakiParser {
     const makiFile = this.makiFile
     let block = this.newBlock()
     const length = makiFile.readUInt32LE();
-    block.end({type:'length commands', value: `${length} bytes` })
+    block.end({type:'count (bytes) commands', value: `${length} bytes` })
 
     const commands = [];
     const start = makiFile.getPosition();
+    let i = 0;
     while (makiFile.getPosition() < start + length) {
       block = this.newBlock()
       commands.push(this.parseComand({ start, makiFile, length }));
-      block.end({type:'command', 'value': JSON.stringify(commands[commands.length-1]) })
+      block.end({ index: i++, type:'command', 'value': JSON.stringify(commands[commands.length-1]) })
     }
 
     return commands;
