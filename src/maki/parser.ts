@@ -76,13 +76,13 @@ class Block {
   }
 
   end(data:{[name:string]:any}={}) {
-    this.data.end = this.makiFile._i;
+    this.data.end = this.makiFile.getPosition();
     this.data = {...this.data, ...data}
   }
 
   newChild(data:{[name:string]:any}={}):Block{
     const child = new Block({type:'prop', ...data})
-    child.data.start = this.makiFile._i;
+    child.data.start = this.makiFile.getPosition();
     child.makiFile = this.makiFile;
     if(!this.data.children){
       this.data.children = []
@@ -244,7 +244,7 @@ class MakiParser {
 
   newBlock():Block{
     const b = new Block()
-    b.data.start = this.makiFile._i;
+    b.data.start = this.makiFile.getPosition();
     b.makiFile = this.makiFile;
     this.blocks.push(b)
     return b;
