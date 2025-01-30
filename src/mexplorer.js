@@ -239,7 +239,7 @@ class BinTree extends Component {
           <t t-if="block.expanded" t-out="'⯆'"/>
           <t t-else="" t-out="'⯈'"/>
         </span>
-        <t t-else="">:</t>
+        <span t-else="">: </span>
         <div class="inline">
           <div t-out="block.value" />
           <t t-if="block.expanded"> 

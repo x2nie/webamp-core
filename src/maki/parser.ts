@@ -249,15 +249,19 @@ class MakiParser {
     let count = this.makiFile.readUInt32LE();
     block.end({type:'count', value:count})
     const classes = [];
+    let i =0
     while (count--) {
       let identifier = "";
       let chunks = 4;
       block = this.newBlock()
+      let alias = block.newChild()
       while (chunks--) {
         identifier += this.makiFile.readUInt32LE().toString(16).padStart(8, "0");
       }
-      block.end({type:'class', 'value':identifier})
+      const GUID = getFormattedId(identifier)
       classes.push(identifier);
+      block.end({type:'class', 'value': `#${i++} ${GUID} (${getClassId(identifier)})`})
+      alias.end({name:'alias', value: getClassId(identifier)})
     }
     return classes;
   }
@@ -418,7 +422,7 @@ class MakiParser {
       const value = this.makiFile.readString();
       // TODO: Don't mutate
       variable.value = value;
-      block.end({type:'const',value})
+      block.end({type:'const',value:`"${value}"`})
     }
   }
 
@@ -551,4 +555,12 @@ function readVersion(makiFile: MakiFile): number {
   return makiFile.readUInt16LE();
 }
 
+function getFormattedId(id: string): string {
+  // https://en.wikipedia.org/wiki/Universally_unique_identifier#Encoding
+  const formattedId = id.replace(
+    /(........)(....)(....)(..)(..)(..)(..)(..)(..)(..)(..)/,
+    "$1-$3-$2-$7$6-$5$4$11$10$9$8"
+  );
+  return formattedId.toLowerCase();
+}
 
