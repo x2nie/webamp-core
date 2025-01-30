@@ -60,7 +60,7 @@ function getClassId(guid: string): string {
   }
   try {
     const cls: Function = classResolver(guid);
-    return cls.prototype.constructor.name;
+    return cls.prototype.constructor.name.replace(/_/gm, '');
   } catch (e) {
     return "--unknown--";
   }
@@ -254,14 +254,14 @@ class MakiParser {
       let identifier = "";
       let chunks = 4;
       block = this.newBlock()
-      let alias = block.newChild()
+      // let alias = block.newChild()
       while (chunks--) {
         identifier += this.makiFile.readUInt32LE().toString(16).padStart(8, "0");
       }
       const GUID = getFormattedId(identifier)
       classes.push(identifier);
       block.end({type:'class', 'value': `#${i++} ${GUID} (${getClassId(identifier)})`})
-      alias.end({name:'alias', value: getClassId(identifier)})
+      // alias.end({name:'alias', value: getClassId(identifier)})
     }
     return classes;
   }
@@ -557,10 +557,13 @@ function readVersion(makiFile: MakiFile): number {
 
 function getFormattedId(id: string): string {
   // https://en.wikipedia.org/wiki/Universally_unique_identifier#Encoding
-  const formattedId = id.replace(
+  const formattedId = id.toUpperCase().replace(
     /(........)(....)(....)(..)(..)(..)(..)(..)(..)(..)(..)/,
-    "$1-$3-$2-$7$6-$5$4$11$10$9$8"
+    //* "$1-$3-$2-$7$6-$5$4$11$10$9$8"
+    (_, p1,p2,p3,p4,p5,p6,p7,p8,p9,pa,pb) => {
+      return `{${p1}-${p3}-${p2.toLowerCase()}-${p7}${p6}-${p5}${4}${pb}${pa}${p9}${p8}}`
+    }
   );
-  return formattedId.toLowerCase();
+  return formattedId//.toLowerCase();
 }
 

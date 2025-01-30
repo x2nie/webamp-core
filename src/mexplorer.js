@@ -233,7 +233,7 @@ class BinTree extends Component {
       <div t-attf-id="tree-#{block_index}" class="tree-item" t-att-data_index="block_index">
         <!-- <t  t-out="block.end - block.start" /> @ -->
         <!-- <t  t-out="block.start" /> -->
-        <t t-out="address(block)" />
+        <t t-out="address(block, false)" />
         <span t-attf-class="block-#{block.type}" t-out="block.type" t-on-click="showPair"/>  
         <span t-if="block.children" class="toggle" t-on-click="toggleChildren">
           <t t-if="block.expanded" t-out="'⯆'"/>
@@ -241,7 +241,7 @@ class BinTree extends Component {
         </span>
         <span t-else="">: </span>
         <div class="inline">
-          <div t-out="block.value" />
+          <div t-out="block.value" class="toggle" t-on-click="toggleChildren" />
           <t t-if="block.expanded"> 
             <t t-foreach="block.children" t-as="child" t-key="child_index">
               <t t-out="address(child,false)" />
@@ -282,7 +282,9 @@ class BinTree extends Component {
     const el = ev.target.closest('.tree-item');
     const index = el.attributes.data_index.value
     const block = this.blocks[index]
-    block.expanded = ! block.expanded
+    if(block.children){
+      block.expanded = ! block.expanded
+    }
   }
 }
 
