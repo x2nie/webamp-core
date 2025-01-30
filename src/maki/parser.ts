@@ -271,16 +271,22 @@ class MakiParser {
     const methods: Method[] = [];
     while (count--) {
       block = this.newBlock()
-      const c1 = block.newChild({})
-      const classCode = makiFile.readUInt16LE();
-      c1.end({name:'classCode', value:classCode.toString(16)})
-      // Offset into our parsed types
-      const typeOffset = classCode & 0xff;
+      let c1 = block.newChild({})
+      // const classCode = makiFile.readUInt16LE();
+      // c1.end({name:'classCode', value: '0x'+classCode.toString(16).padStart(4, '0')})
+      // // Offset into our parsed types
+      // const typeOffset = classCode & 0xff;
+      const typeOffset = makiFile.readUInt8();
+      c1.end({name:'class index', value: typeOffset})
+      
+      c1 = block.newChild({})
+      const always1 = makiFile.readUInt8();
+      c1.end({name:'always 1', value: always1})
 
       const c2 = block.newChild({})
       // This is probably the second half of a uint32
       const unknown1 = makiFile.readUInt16LE();
-      c2.end({name: 'unknown', value:unknown1})
+      c2.end({name: 'unknown', value:'0x'+unknown1.toString(16).padStart(4, '0')})
       
       const c3 = block.newChild({})
       let name = makiFile.readString(); //x2nie .toLowerCase();

@@ -139,7 +139,7 @@ class HexEdit extends Component {
         <div t-out="line" />
       </t>
     </div>
-    <div class="hex" t-on-click="onClick">
+    <div class="hex" t-on-click="showPair">
       <span t-out="hexs()" />
     </div>
     <div class="ascii">
@@ -179,7 +179,7 @@ class HexEdit extends Component {
         rep.push(hex(i)+' ');
         i++
       }
-      rep.push(`<span class="hilite block-${block.type}" data-index="${block_index}">`)
+      rep.push(`<span class="hilite block-${block.type}" id="hex-${block_index}" data_index="${block_index}">`)
 
       let mid = []
       while(i< end){
@@ -215,11 +215,13 @@ class HexEdit extends Component {
     return ascii.join('')
   }
 
-  onClick(ev){
-    
-    const span = ev.target.closest('.hilite');
-    if(span){
-
+  showPair(ev){
+    const el = ev.target.closest('.hilite');
+    if(el){
+      const index = el.attributes.data_index.value
+      const tree = document.getElementById(`tree-${index}`)
+      tree.scrollIntoView()
+      setSelected(el, tree)
     }
   }
 }
@@ -231,8 +233,8 @@ class BinTree extends Component {
       <div t-attf-id="tree-#{block_index}" class="tree-item" t-att-data_index="block_index">
         <!-- <t  t-out="block.end - block.start" /> @ -->
         <!-- <t  t-out="block.start" /> -->
-        <t  t-out="address(block)" />
-        <span t-attf-class="block-#{block.type}" t-out="block.type" />  
+        <t t-out="address(block)" />
+        <span t-attf-class="block-#{block.type}" t-out="block.type" t-on-click="showPair"/>  
         <span t-if="block.children" class="toggle" t-on-click="toggleChildren">
           <t t-if="block.expanded" t-out="'⯆'"/>
           <t t-else="" t-out="'⯈'"/>
@@ -242,6 +244,7 @@ class BinTree extends Component {
           <div t-out="block.value" />
           <t t-if="block.expanded"> 
             <t t-foreach="block.children" t-as="child" t-key="child_index">
+              <t t-out="address(child,false)" />
               <span t-attf-class="block-#{child.type}" t-out="child.name" /> :
               <t  t-out="child.value" /><br/>
             </t>
@@ -254,14 +257,27 @@ class BinTree extends Component {
 
   setup(){
     this.blocks = useState(this.env.binary.blocks)
+    this.selected = null;
   }
 
-  address(block){
+  address(block, position=true){
     const len = (block.end - block.start).toString(10).padStart(3, '_')
-    const at = block.start.toString(16).padStart(6, '0')
-    return markup(`<code>${len} @ ${at} </code> `)
+    const at = position? ` @ ${block.start.toString(16).padStart(6, '0')} `: ''
+    return markup(`<code>${len}${at}</code> `)
   }
 
+  showPair(ev) {
+    const el = ev.target.closest('.tree-item');
+    const index = el.attributes.data_index.value;
+    const hex = document.getElementById(`hex-${index}`)
+    // if(this.selected){
+    //   this.selected.classList.remove('selected')
+    // }
+    // this.selected = hex;
+    // hex.classList.add('selected')
+    hex.scrollIntoView()
+    setSelected(el, hex)
+  }
   toggleChildren(ev){
     const el = ev.target.closest('.tree-item');
     const index = el.attributes.data_index.value
@@ -307,7 +323,18 @@ const env = {
   binary: reactive({
     data:  [],
     blocks: [],
+    selected: -1, //? block.index
   })
+}
+
+const selections = []
+function setSelected(el0, el1){
+  selections[0] && selections[0].classList.remove('selected')
+  selections[1] && selections[1].classList.remove('selected')
+  el0.classList.add('selected')
+  el1.classList.add('selected')  
+  selections[0] = el0
+  selections[1] = el1
 }
 
 mount(Root, document.body, {env});
