@@ -108,8 +108,8 @@ class MakiParser {
   makiFile: MakiFile;
   blocks : Block[] = [];
 
-  findBlock(type:string, index:int):Block{
-    const result = this.blocks.find(b => b.data.type==type && b.data.index == index) || {}
+  findBlock(type:string, index:number):Block{
+    const result = this.blocks.find(b => b.data.type==type && b.data.index == index) || new Block()
     // debugger
     return result
   }
@@ -446,6 +446,7 @@ class MakiParser {
       block.end({ index: i++,
         type:'variable', 
         'value': `${global? 'GLOBAL ':''}${my.type.toLowerCase()} (${my.value}) `
+        // @ts-ignore
           +`${my.guid ? '['+ getClassId(my.guid) +']' : '' }  `
           // +JSON.stringify(my)
       })
@@ -496,9 +497,9 @@ class MakiParser {
 
       bindings.push({ variableOffset, binaryOffset, methodOffset });
       const aclass = variables[variableOffset];
-      if (!aclass.events) {
-        aclass.events = [];
-      }
+      // @ts-ignore
+      if (!aclass.events) {aclass.events = [];}
+      // @ts-ignore
       aclass.events.push(bindings.length - 1);
       block.end({index: i++, type:'binding', 'value': JSON.stringify(bindings[bindings.length-1]) })
     }
@@ -519,17 +520,26 @@ class MakiParser {
     let i = 0;
     while (makiFile.getPosition() < start + length) {
       block = this.newBlock()
-      commands.push(this.parseComand({ start, makiFile, length }));
-      block.end({ index: i++, type:'command', 'value': JSON.stringify(commands[commands.length-1]) })
+      commands.push(this.parseComand({ start, makiFile, length, block }));
+      block.end({ index: i++, type:'command', 'value': block.data.opcode+' | '+ JSON.stringify(commands[commands.length-1]) })
     }
 
     return commands;
   }
 
   // TODO: Refactor this to consume bytes directly off the end of MakiFile
-  parseComand({ start, makiFile, length }) {
+  parseComand({ start, makiFile, length, block }) {
+    let c: Block;
+    let v;
     const pos = makiFile.getPosition() - start;
+
+    c = block.newChild({})
     const opcode = makiFile.readUInt8();
+    const cmd = COMMANDS[opcode]; //* Block stuff
+    c.end({name: 'opcode', value:opcode + ` | ${cmd.name} | ${cmd.short|| ''} `})
+    block.data.opcode = `${cmd.name.toUpperCase().padStart(5, '_')} | ${opcode.toString().padStart(3, ' ')}`
+    block.data.offset = pos;
+
     const command = {
       offset: pos,
       start,
@@ -546,10 +556,18 @@ class MakiParser {
     switch (command.argType) {
       case "COMMAND_OFFSET":
         // Note in the perl code here: "todo, something strange going on here..."
-        arg = makiFile.readInt32LE() + 5 + pos;
+        c = block.newChild({})
+        // arg = makiFile.readInt32LE() + 5 + pos;
+        const raw_arg = makiFile.readInt32LE();
+        arg = raw_arg + 5 + pos;
+
+        c.end({name: 'cmd.arg', value:raw_arg})
         break;
+        
       case "VARIABLE_OFFSET":
+        c = block.newChild({})
         arg = makiFile.readUInt32LE();
+        c.end({name: 'var.arg', value:arg})
         break;
       default:
         throw new Error("Invalid argType");
@@ -565,12 +583,16 @@ class MakiParser {
       makiFile.peekUInt32LE() >= 0xffff0000 &&
       makiFile.peekUInt32LE() <= 0xffff000f
     ) {
-      makiFile.readUInt32LE();
+      c = block.newChild({})
+      v = makiFile.readUInt32LE();
+      c.end({name: 'protection?', value:v})
     }
 
     // TODO: What even is this?
     if (opcode === 112 /* strangeCall */) {
-      makiFile.readUInt8();
+      c = block.newChild({})
+      v = makiFile.readUInt8();
+      c.end({name: 'opcode==112', value:v})
     }
     return command;
   }

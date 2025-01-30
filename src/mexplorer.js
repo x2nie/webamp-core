@@ -235,12 +235,12 @@ class BinTree extends Component {
         <!-- <t  t-out="block.start" /> -->
         <t t-out="address(block, false)" />
         <span t-attf-class="block-#{block.type}" t-out="block.type" t-on-click="showPair"/>  
+        <t t-if="!block.type.startsWith('count')" t-out="'#' + block.index"/>
         <span t-if="block.children" class="toggle" t-on-click="toggleChildren">
           <t t-if="block.expanded" t-out="'⯆'"/>
           <t t-else="" t-out="'⯈'"/>
         </span>
         <span t-else="">: </span>
-        <t t-if="!block.type.startsWith('count')" t-out="'#' + block.index"/>
         <div class="inline">
           <div t-out="block.value" class="toggle" t-on-click="toggleChildren" />
           <t t-if="block.expanded"> 
