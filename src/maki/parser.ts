@@ -318,18 +318,47 @@ class MakiParser {
     let count = makiFile.readUInt32LE();
     const variables: Variable[] = [];
     block.end({type:'count variables', value:count})
+    let v=0;
 
+    let i=0;
     while (count--) {
       block = this.newBlock()
+
+      let c = block.newChild({})
       const typeOffset = makiFile.readUInt8();
+      c.end({name:'class/type index', value: typeOffset})
+      
+      c = block.newChild({})
       const object = makiFile.readUInt8();
+      c.end({name:'isObject', value: object})
+      
+      c = block.newChild({})
       const subClass = makiFile.readUInt16LE();
+      c.end({name:'subClass', value: subClass})
+      
+      c = block.newChild({})
       const uinit1 = makiFile.readUInt16LE();
+      c.end({name:'uinit1', value: uinit1})
+      
+      c = block.newChild({})
       const uinit2 = makiFile.readUInt16LE();
-      makiFile.readUInt16LE(); // uinit3
-      makiFile.readUInt16LE(); //uinit4
-      const global = makiFile.readUInt8();
-      makiFile.readUInt8(); // system
+      c.end({name:'uinit2', value: uinit2})
+      
+      c = block.newChild({})
+      v = makiFile.readUInt16LE(); // uinit3
+      c.end({name:'UNKNOWN 1', value: v})
+      
+      c = block.newChild({})
+      v = makiFile.readUInt16LE(); //uinit4
+      c.end({name:'UNKNOWN 2', value: v})
+      
+      c = block.newChild({})
+      const global = makiFile.readUInt8() == 1 ? true: false;
+      c.end({name:'is Global', value: global})
+      
+      c = block.newChild({})
+      v = makiFile.readUInt8(); // system
+      c.end({name:'UNKNOWN 3', value: v})
 
       if (subClass) {
         const variable = variables[typeOffset] as VariableObject;
@@ -404,7 +433,15 @@ class MakiParser {
         };
         variables.push(variable);
       }
-      block.end({type:'variable', 'value': JSON.stringify(variables[variables.length-1]) })
+      // block.end({type:'variable', 'value': JSON.stringify(variables[variables.length-1]) })
+      const my = {...variables[variables.length-1]}
+      delete my['offset']
+      block.end({
+        type:'variable', 
+        'value': `#${i++} ${global? 'GLOBAL ':''}${my.type.toLowerCase()} (${my.value}) `
+          +`${my.guid ? '['+ getClassId(my.guid) +']' : '' }  `
+          // +JSON.stringify(my)
+      })
     }
     return variables;
   }
