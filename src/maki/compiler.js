@@ -10,6 +10,7 @@ function tokenizer(input) {
     const WHITESPACE = /\s/;
     const NUMBERS = /[0-9]/;
     const LETTERS = /[a-z_]/i;
+    const GUID = /[0-9\-a-z]/i;
 
     while (current < input.length) {
         let char = input[current];
@@ -17,6 +18,55 @@ function tokenizer(input) {
         // Skip whitespace
         if (WHITESPACE.test(char)) {
             current++;
+            continue;
+        }
+
+        if (char === '/' && input[current+1] == '/') {
+            let value = char;
+            char = input[++current];
+            while (char !== '\n' && current < input.length) {
+                value += char;
+                char = input[++current];
+            }
+            tokens.push({ type: 'comment', 
+                // value: value.trim() 
+            });
+            continue;
+        }
+
+        if (char === '/' && input[current+1] == '*') {
+            current++
+            current++
+            let value = '/*';
+            char = input[current++];
+            value += char;
+            let lastChar = null;
+            while ( !(char == '/' && lastChar=='*' ) && current < input.length) {
+                lastChar = char;
+                char = input[current++];
+                value += char;
+            }
+            tokens.push({ type: 'comment', 
+                // value: value.trim() 
+            });
+            // console.log(value)
+            continue;
+        }
+
+        if (char === '@' && input[current+1] == '{') {
+            current++
+            current++
+            let value = '';
+            char = input[current++];
+            while (GUID.test(char)) {
+                value += char;
+                char = input[++current];
+            }
+            current++
+            current++
+            tokens.push({ type: 'guid', 
+                value: value.trim() 
+            });
             continue;
         }
 
@@ -54,7 +104,9 @@ function tokenizer(input) {
             // Check if it's a keyword or type
             if (
                 value === 'Global' || value === 'Function' || value === 'System' || 
-                value === 'int' || value === 'return' //|| value === 'Button'
+                value === 'int' || value === 'return' || 
+                value === 'class' || 
+                value === 'extern' 
             ) {
                 tokens.push({ type: 'keyword', value });
             } else {
@@ -123,6 +175,11 @@ function parser(tokens) {
         let token = tokens[current]; let value;
 
         // Handle preprocessor directives (ignore them)
+        if (token.type === 'comment') {
+            current++;
+            return null; // Skip preprocessor directives
+        }
+
         if (token.type === 'preprocessor') {
             current++;
             return null; // Skip preprocessor directives
