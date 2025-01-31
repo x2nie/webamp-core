@@ -40,10 +40,10 @@ const std_mi = `
 #define __STD_MI
 
 #ifndef true
-#define true 1
+    #define true 1
 #endif
 #ifndef false
-#define false 0
+    #define false 0
 #endif
 
 #define MC_TARGET "Winamp 5.02 (skin version 1.1)"
@@ -95,7 +95,10 @@ extern String Object.getId();
  @param  a
  @param  b
 */
-extern Int Object.onNotify(String command, String param, int a, int b);`;
+extern Int Object.onNotify(String command, String param, int a, int b);
+
+
+#endif`;
 
 input = std_mi
 document.getElementById('code').innerText = input

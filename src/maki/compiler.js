@@ -72,13 +72,24 @@ function tokenizer(input) {
 
         // Handle preprocessor directives (e.g., #include)
         if (char === '#') {
-            let value = '';
+            let name = '';
             char = input[++current];
+            while ((LETTERS.test(char) || NUMBERS.test(char)) && current < input.length ) {
+                name += char;
+                char = input[++current];
+            }
+            if(name=='endif'){
+                debugger
+            }
+            let value = '';
+            char = input[current];
             while (char !== '\n' && current < input.length) {
                 value += char;
                 char = input[++current];
             }
-            tokens.push({ type: 'preprocessor', value: value.trim() });
+            // tokens.push({ type: 'preprocessor', value: value.trim() });
+            const data = tokenizer(value.trim())
+            tokens.push({ type: 'macro', name, data });
             continue;
         }
 
@@ -96,14 +107,14 @@ function tokenizer(input) {
         // Handle letters (keywords, identifiers)
         if (LETTERS.test(char)) {
             let value = '';
-            while (LETTERS.test(char) || NUMBERS.test(char)) {
+            while ((LETTERS.test(char) || NUMBERS.test(char)) && current < input.length ) {
                 value += char;
                 char = input[++current];
             }
 
             // Check if it's a keyword or type
             if (
-                value === 'Global' || value === 'Function' || value === 'System' || 
+                value === 'Global' || value === 'Function' || //value === 'System' || 
                 value === 'int' || value === 'return' || 
                 value === 'class' || 
                 value === 'extern' 
@@ -180,9 +191,45 @@ function parser(tokens) {
             return null; // Skip preprocessor directives
         }
 
-        if (token.type === 'preprocessor') {
+        if (token.type === 'macro') {
             current++;
+            if(token.name == 'ifdef' || token.name == 'ifndef'){
+                //? such as #ifndef __STD_MI is crucial, it may take|ignore whole file
+                const block = [];
+                while (!(tokens[current].type == 'macro' && tokens[current].name == 'endif')) {
+                    // data.push(tokens[current]);
+                    block.push(walk());
+                    // current++;
+                }
+                current++;
+                return {
+                    type: 'Ifdef',
+                    name: token.name,
+                    data: token.data,
+                    codeDomain: block
+                }
+            }
+            return token
             return null; // Skip preprocessor directives
+        }
+        
+        if (token.value === 'extern' ) {
+            current++;
+            token = tokens[current++];
+            // const name = token.value;
+            // current += 2; // Skip identifier and '('
+            const data = [];
+            while (tokens[current].value !== ';') {
+                // data.push(tokens[current]);
+                data.push(walk());
+                // current++;
+            }
+            current++; // Skip ')'
+            return {
+                type: 'Registry',
+                varType:token,
+                data,
+            };
         }
 
         // Handle numbers
@@ -398,10 +445,11 @@ function parser(tokens) {
             }
         }
 
-        if(token.type=='symbol'){
+        if(['symbol','guid'].includes(token.type)){
             current++;
             return {
-                type: 'Symbol', value: token.value
+                // type: 'Symbol', value: token.value
+                ...token, //type: token.type
             }
         }
 
