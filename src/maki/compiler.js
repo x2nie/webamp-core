@@ -1,3 +1,7 @@
+function isa(token, type){
+    return token && token.type == type
+}
+
 // Tokenizer
 function tokenizer(input) {
     const tokens = [];
@@ -74,7 +78,27 @@ function tokenizer(input) {
 
         // Handle symbols
         if (char === '.') {
-            tokens.push({ type: 'dot', value: char });
+            tokens.push({
+                type: 'dot',
+                value: '.'
+            });
+            current++;
+            continue;
+        }
+        if(char === ',') {
+            tokens.push({
+              type: 'comma',
+              value: ','
+            });
+            current++;
+            continue;
+        }
+      
+        if (char === ';') {
+            tokens.push({
+                type: 'semi',
+                value: ';'
+            });
             current++;
             continue;
         }
@@ -90,8 +114,13 @@ function tokenizer(input) {
 function parser(tokens) {
     let current = 0;
 
+    function nextis(type, i=0){
+        let token = tokens[current+i]
+        return token && token.type == type
+    }
+
     function walk() {
-        let token = tokens[current];
+        let token = tokens[current]; let value;
 
         // Handle preprocessor directives (ignore them)
         if (token.type === 'preprocessor') {
@@ -119,10 +148,17 @@ function parser(tokens) {
 
         // Handle identifiers
         if (token.type === 'identifier') {
-            current++;
+            value = token.value
+            current++
+            if(nextis('dot') && nextis('identifier', 1)){
+                token = tokens[current++];
+                value+= token.value;
+                token = tokens[current++];
+                value+= token.value;
+            }
             return {
                 type: 'Identifier',
-                name: token.value,
+                name: value,
             };
         }
 
@@ -168,7 +204,7 @@ function parser(tokens) {
         // }
 
         // Handle function declarations
-        if (token.type === 'keyword' && token.value === 'Function') {
+        if (token.type === 'keyword' && token.value === 'Function0') {
             token = tokens[++current]; // Skip 'Function'
             const name = token.value;
 
@@ -183,21 +219,21 @@ function parser(tokens) {
 
             current++; // Skip ')'
 
-            const body = [];
-            token = tokens[current];
+            // const body = [];
+            // token = tokens[current];
 
-            while (token.value !== '}') {
-                body.push(walk());
-                token = tokens[current];
-            }
+            // while (token.value !== '}') {
+            //     body.push(walk());
+            //     token = tokens[current];
+            // }
 
             current++; // Skip '}'
 
             return {
-                type: 'FunctionDeclaration',
+                type: 'CustomFunctionDeclaration',
                 name,
                 params,
-                body,
+                // body,
             };
         }
 
@@ -234,6 +270,41 @@ function parser(tokens) {
             };
         }
 
+        if (token.value === '{' && token.type == 'symbol' ) {
+            token = tokens[++current];
+            // let prevToken = tokens[current - 2];
+            // if (typeof(prevToken) != 'undefined' && prevToken.type === 'name') {
+            var node = {
+                type: 'CodeDomain',
+                // name: prevToken.value,
+                params: []
+            };
+            while ( !(token.value == '}' && token.type == 'symbol') ) {
+                node.params.push(walk());
+                token = tokens[current];
+            }
+      
+            current++;
+            return node;
+        }
+
+        if (token.value === '(' && token.type == 'symbol' ) {
+            token = tokens[++current];
+            // let prevToken = tokens[current - 2];
+            // if (typeof(prevToken) != 'undefined' && prevToken.type === 'name') {
+            var node = {
+                type: 'CodeCave',
+                // name: prevToken.value,
+                params: []
+            };
+            while ( !(token.value == ')' && token.type == 'symbol') ) {
+                node.params.push(walk());
+                token = tokens[current];
+            }
+      
+            current++;
+            return node;
+        }
         // Handle function calls
         if (token.type === 'identifier' && tokens[current + 1]?.value === '(') {
             const name = token.value;
@@ -249,6 +320,32 @@ function parser(tokens) {
                 name,
                 arguments: args,
             };
+        }
+
+        if(token.type=='semi'){
+            current++;
+            return {
+                type: 'Terminator',value: token.value
+            }
+        }
+        if(token.type=='keyword'){
+            current++;
+            return {
+                type: 'Keyword', name: token.value
+            }
+        }
+        if(token.type=='comma'){
+            current++;
+            return {
+                type: 'Separator', value: token.value
+            }
+        }
+
+        if(token.type=='symbol'){
+            current++;
+            return {
+                type: 'Symbol', value: token.value
+            }
         }
 
         //throw new TypeError(`Unknown token: ${token.type}`);
