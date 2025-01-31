@@ -520,8 +520,10 @@ class MakiParser {
     let i = 0;
     while (makiFile.getPosition() < start + length) {
       block = this.newBlock()
-      commands.push(this.parseComand({ start, makiFile, length, block }));
-      block.end({ index: i++, type:'command', 'value': block.data.opcode+' | '+ JSON.stringify(commands[commands.length-1]) })
+      // commands.push(this.parseComand({ start, makiFile, length, block }));
+      const command = this.parseComand({ start, makiFile, length, block })
+      commands.push(command);
+      block.end({ /* index: i++,  */index: command.offset, type:'command', 'value': block.data.opcode+' | '+ JSON.stringify(commands[commands.length-1]) })
     }
 
     return commands;

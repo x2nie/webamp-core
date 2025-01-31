@@ -429,12 +429,27 @@ class Decompiler {
   }
 }
 
-async function main() {
-  // const skin = "assets/CornerAmp_Redux.wal";
-  // const script = "scripts/corner.maki";
+function assureUrl(){
+  const url = new URL(window.location.href);
+  let makiPath = url.searchParams.get("maki"); // "some_value"
+  console.log("maki:", makiPath);
+  if (!makiPath) {
+    // makiPath = "/assets/skins/MMD3/scripts/songinfo.maki";
+    makiPath = "/assets/skins/SimpleTutorial/SongStopper.maki";
+    url.searchParams.set("maki", makiPath);
+    window.history.pushState({ pageTitle: "title" }, "title", url);
+    // window.location.assign(url.href)
+  }
+  return makiPath;
+}
 
-  const skin = "assets/WinampModern566.wal";
-  const script = "scripts/eq.maki";
+async function main() {
+  const skin = "assets/skins/CornerAmp_Redux.wal";
+  const script = "scripts/corner.maki";
+
+
+  // const skin = "assets/skins/WinampModern566.wal";
+  // const script = "scripts/eq.maki";
 
   const response = await fetch(skin);
   const data = await response.blob();
@@ -443,6 +458,14 @@ async function main() {
   // const makiFile = zip.file(script);
   const makiFile = getCaseInsensitiveFile(zip, script);
   const scriptContents = await makiFile.async("arraybuffer");
+
+  // const makiPath = assureUrl()
+  // debugger
+  // // fetch(makiPath).then(async (response) => {
+  // const response = await fetch(makiPath);
+  // const scriptContents = await response.arrayBuffer();
+
+
   // TODO: Try catch?
   const parsedScript = parseMaki(scriptContents);
 
