@@ -1,4 +1,4 @@
-function isa(token, type){
+function isa(token, type) {
     return token && token.type == type
 }
 
@@ -21,39 +21,41 @@ function tokenizer(input) {
             continue;
         }
 
-        if (char === '/' && input[current+1] == '/') {
+        if (char === '/' && input[current + 1] == '/') {
             let value = char;
             char = input[++current];
             while (char !== '\n' && current < input.length) {
                 value += char;
                 char = input[++current];
             }
-            tokens.push({ type: 'comment', 
+            tokens.push({
+                type: 'comment',
                 // value: value.trim() 
             });
             continue;
         }
 
-        if (char === '/' && input[current+1] == '*') {
+        if (char === '/' && input[current + 1] == '*') {
             current++
             current++
             let value = '/*';
             char = input[current++];
             value += char;
             let lastChar = null;
-            while ( !(char == '/' && lastChar=='*' ) && current < input.length) {
+            while (!(char == '/' && lastChar == '*') && current < input.length) {
                 lastChar = char;
                 char = input[current++];
                 value += char;
             }
-            tokens.push({ type: 'comment', 
+            tokens.push({
+                type: 'comment',
                 // value: value.trim() 
             });
             // console.log(value)
             continue;
         }
 
-        if (char === '@' && input[current+1] == '{') {
+        if (char === '@' && input[current + 1] == '{') {
             current++
             current++
             let value = '';
@@ -64,8 +66,9 @@ function tokenizer(input) {
             }
             current++
             current++
-            tokens.push({ type: 'guid', 
-                value: value.trim() 
+            tokens.push({
+                type: 'guid',
+                value: value.trim()
             });
             continue;
         }
@@ -74,11 +77,11 @@ function tokenizer(input) {
         if (char === '#') {
             let name = '';
             char = input[++current];
-            while ((LETTERS.test(char) || NUMBERS.test(char)) && current < input.length ) {
+            while ((LETTERS.test(char) || NUMBERS.test(char)) && current < input.length) {
                 name += char;
                 char = input[++current];
             }
-            if(name=='endif'){
+            if (name == 'endif') {
                 debugger
             }
             let value = '';
@@ -87,9 +90,9 @@ function tokenizer(input) {
                 value += char;
                 char = input[++current];
             }
-            
+
             let data
-            if(name=='include'){
+            if (name == 'include') {
                 data = value
             } else {
                 data = tokenizer(value.trim())
@@ -112,7 +115,7 @@ function tokenizer(input) {
         // Handle letters (keywords, identifiers)
         if (LETTERS.test(char)) {
             let value = '';
-            while ((LETTERS.test(char) || NUMBERS.test(char)) && current < input.length ) {
+            while ((LETTERS.test(char) || NUMBERS.test(char)) && current < input.length) {
                 value += char;
                 char = input[++current];
             }
@@ -120,9 +123,10 @@ function tokenizer(input) {
             // Check if it's a keyword or type
             if (
                 value === 'Global' || value === 'Function' || //value === 'System' || 
-                value === 'return' || 
-                value === 'class' || 
-                value === 'extern' 
+                value === 'return' ||
+                value === 'class' ||
+                value === 'if' ||
+                value === 'extern'
             ) {
                 tokens.push({ type: 'keyword', value });
             } else {
@@ -153,15 +157,15 @@ function tokenizer(input) {
             current++;
             continue;
         }
-        if(char === ',') {
+        if (char === ',') {
             tokens.push({
-              type: 'comma',
-              value: ','
+                type: 'comma',
+                value: ','
             });
             current++;
             continue;
         }
-      
+
         if (char === ';') {
             tokens.push({
                 type: 'semi',
@@ -182,12 +186,12 @@ function tokenizer(input) {
 function parser(tokens) {
     let current = 0;
 
-    function nextis(type, i=0){
-        let token = tokens[current+i]
+    function nextis(type, i = 0) {
+        let token = tokens[current + i]
         return token && token.type == type
     }
-    function next(i=0){
-        let token = tokens[current+i]
+    function next(i = 0) {
+        let token = tokens[current + i]
         return token.value || ''
     }
 
@@ -202,7 +206,7 @@ function parser(tokens) {
 
         if (token.type === 'macro') {
             current++;
-            if(token.name == 'ifdef' || token.name == 'ifndef'){
+            if (token.name == 'ifdef' || token.name == 'ifndef') {
                 //? such as #ifndef __STD_MI is crucial, it may take|ignore whole file
                 const block = [];
                 while (!(tokens[current].type == 'macro' && tokens[current].name == 'endif')) {
@@ -231,8 +235,8 @@ function parser(tokens) {
                 name: token.value,
             }
         }
-        
-        if (token.value === 'extern' ) {
+
+        if (token.value === 'extern') {
             current++;
             token = tokens[current++];
             // const name = token.value;
@@ -246,7 +250,7 @@ function parser(tokens) {
             current++; // Skip ')'
             return {
                 type: 'Registry',
-                varType:token,
+                varType: token,
                 data,
             };
         }
@@ -273,21 +277,26 @@ function parser(tokens) {
         if (token.type === 'identifier') {
             value = token.value;
             current++
-            if(nextis('dot') && nextis('identifier', 1)){
+            if (nextis('dot') && nextis('identifier', 1)) {
                 token = tokens[current++];
-                value+= token.value;
+                value += token.value;
                 token = tokens[current++];
-                value+= token.value;
+                value += token.value;
             }
             const node = {
                 type: 'identifier',
                 name: value,
             };
-            if(next()=='('){                    //? it maybe a FuncDec or a Call
+            if (next() == '(') {                    //? it maybe a FuncDec or a Call
                 const params = walk();
                 
-                if(next()=='{'){                //? its a FuncDef
+                if (next() == '{') {                //? its a FuncDef
                     node.type = "FunctionDeclaration"
+                    // debugger
+                    if(ast.body[ast.body.length-1].type == 'identifier'){
+                        const theType = ast.body.pop()
+                        node.retType = theType.name;
+                    }
                     node.parameters = params.params
                     node.body = walk().body;    //? codeDomain
                 } else {
@@ -350,12 +359,25 @@ function parser(tokens) {
 
         // Handle function declarations
         if (token.type === 'keyword' && token.value === 'Function') {
-            token = tokens[++current]; // Skip 'Function'
-            const name = token.value;
+            current++
+            let node = {
+                type: 'CustomFunctionHeader',
+                retType: null,
+            }
+            // token = tokens[current++]; // Skip 'Function'
+            // let retType = null;
+            // let name = token.value;
+            if (nextis('identifier') && nextis('identifier', 1)) {
+                token = tokens[current++]; // Skip '('
+                node.retType = token.value;
+                // node = {...token, node}
+            }
 
-            token = tokens[++current]; // Skip '('
+            // token = tokens[++current]; // Skip '('
             // const params = [];
             const params = walk();
+            node = { ...params, ...node }
+            // Object.assign(node, params)
             // token = tokens[++current];
 
             // while (token.value !== ')') {
@@ -375,35 +397,29 @@ function parser(tokens) {
 
             // current++; // Skip '}'
 
-            return {
-                type: 'CustomFunctionHeader',
-                name,
-                params,
-                // body,
-            };
+            return node;
         }
 
         // Handle global declarations
         if (token.type === 'keyword' && token.value === 'Global') {
             current++;
             const varType = tokens[current++].value;
-            // debugger
             const declarations = [];
             let last = null
             while (tokens[current].value !== ';') {
                 token = tokens[current++];
-                if(token.type=='identifier'){
+                if (token.type == 'identifier') {
                     declarations.push(token);
-                } else if(token.value==','){
+                } else if (token.value == ',') {
                     continue // Skip commas
-                } else if(token.value=='='){
+                } else if (token.value == '=') {
                     const expression = walk();
                     last.defaultValue = expression;
                 } else {
                     throw new TypeError(`Expected identifier: ${token.value}`);
                 }
                 // if (declaration != null) { 
-                    // declarations.push(declaration);
+                // declarations.push(declaration);
                 // }
                 // current++;
                 last = token;
@@ -416,7 +432,7 @@ function parser(tokens) {
             };
         }
 
-        if (token.value === '{' && token.type == 'symbol' ) {
+        if (token.value === '{' && token.type == 'symbol') {
             token = tokens[++current];
             // let prevToken = tokens[current - 2];
             // if (typeof(prevToken) != 'undefined' && prevToken.type === 'name') {
@@ -425,28 +441,27 @@ function parser(tokens) {
                 // name: prevToken.value,
                 body: []
             };
-            while ( !(token.value == '}' && token.type == 'symbol') ) {
+            while (!(token.value == '}' && token.type == 'symbol')) {
                 // node.body.push(walk());
                 token = tokens[current];
-                debugger
                 const statement = {
                     type: 'ExpressionStatement',
                     body: []
                 }
-                while ( token.type != 'semi' && !(token.value == '}' && token.type == 'symbol') ) {
+                while (token.type != 'semi' && !(token.value == '}' && token.type == 'symbol')) {
                     statement.body.push(walk());
                     token = tokens[current];
                 }
                 token = tokens[++current];
-                
+
                 node.body.push(statement)
             }
-      
+
             current++;
             return node;
         }
 
-        if (token.value === '(' && token.type == 'symbol' ) {
+        if (token.value === '(' && token.type == 'symbol') {
             token = tokens[++current];
             // let prevToken = tokens[current - 2];
             // if (typeof(prevToken) != 'undefined' && prevToken.type === 'name') {
@@ -455,18 +470,18 @@ function parser(tokens) {
                 // name: prevToken.value,
                 params: []
             };
-            while ( !(token.value == ')' && token.type == 'symbol') ) {
+            while (!(token.value == ')' && token.type == 'symbol')) {
                 node.params.push(walk());
                 token = tokens[current];
             }
             //? check if this is paramerterlist
-            if(node.params.length>=2 && node.params[1].type != 'comma'){
+            if (node.params.length >= 2 && node.params[1].type != 'comma') {
                 node = {
                     type: 'Parameters',
                     params: tokens2parameters(node.params)
                 }
             }
-      
+
             current++;
             return node;
         }
@@ -487,13 +502,13 @@ function parser(tokens) {
         //     };
         // }
 
-        if(token.type=='semi'){
+        if (token.type == 'semi') {
             current++;
             return {
-                type: 'Terminator',value: token.value
+                type: 'Terminator', value: token.value
             }
         }
-        if(token.type=='keyword'){
+        if (token.type == 'keyword') {
             current++;
             return {
                 type: 'Keyword', name: token.value
@@ -506,7 +521,7 @@ function parser(tokens) {
         //     }
         // }
 
-        if(['symbol','guid', 'comma'].includes(token.type)){
+        if (['symbol', 'guid', 'comma'].includes(token.type)) {
             current++;
             return token
             // return {
@@ -536,10 +551,10 @@ function parser(tokens) {
 }
 
 function tokens2parameters(tokens) {
-    console.log('tokens2args >',tokens)
+    console.log('tokens2args >', tokens)
     let result = [];
     for (let i = 0; i < tokens.length; i++) {
-        if (tokens[i].type === "Type" && tokens[i + 1]?.type === "Identifier") {
+        if (tokens[i].type != "comma" && tokens[i + 1]?.type === "identifier") {
             result.push({
                 type: "Parameter",
                 varType: tokens[i].name,
@@ -548,7 +563,7 @@ function tokens2parameters(tokens) {
             i++; // Lewati identifier karena sudah diproses
         }
     }
-    console.log('tokens2args <',result)
+    console.log('tokens2args <', result)
     return result;
 }
 // So we define a traverser function which accepts an AST and a
@@ -558,67 +573,67 @@ function traverser(ast, visitor) {
     // A `traverseArray` function that will allow us to iterate over an array and
     // call the next function that we will define: `traverseNode`.
     function traverseArray(array, parent) {
-      array.forEach(child => {
-        traverseNode(child, parent);
-      });
+        array.forEach(child => {
+            traverseNode(child, parent);
+        });
     }
-  
+
     // `traverseNode` will accept a `node` and its `parent` node. So that it can
     // pass both to our visitor methods.
     function traverseNode(node, parent) {
-  
-      // We start by testing for the existence of a method on the visitor with a
-      // matching `type`.
-      let methods = visitor[node.type];
-  
-      // If there is an `enter` method for this node type we'll call it with the
-      // `node` and its `parent`.
-      if (methods && methods.enter) {
-        methods.enter(node, parent);
-      }
-  
-      // Next we are going to split things up by the current node type.
-      switch (node.type) {
-  
-        // We'll start with our top level `Program`. Since Program nodes have a
-        // property named body that has an array of nodes, we will call
-        // `traverseArray` to traverse down into them.
-        //
-        // (Remember that `traverseArray` will in turn call `traverseNode` so  we
-        // are causing the tree to be traversed recursively)
-        case 'Program':
-          traverseArray(node.body, node);
-          break;
-  
-        // Next we do the same with `CallExpression` and traverse their `params`.
-        case 'CallExpression':
-          traverseArray(node.params, node);
-          break;
-  
-        // In the cases of `NumberLiteral` and `StringLiteral` we don't have any
-        // child nodes to visit, so we'll just break.
-        case 'NumberLiteral':
-        case 'StringLiteral':
-          break;
-  
-        // And again, if we haven't recognized the node type then we'll throw an
-        // error.
-        default:
-          throw new TypeError(node.type);
-      }
-  
-      // If there is an `exit` method for this node type we'll call it with the
-      // `node` and its `parent`.
-      if (methods && methods.exit) {
-        methods.exit(node, parent);
-      }
+
+        // We start by testing for the existence of a method on the visitor with a
+        // matching `type`.
+        let methods = visitor[node.type];
+
+        // If there is an `enter` method for this node type we'll call it with the
+        // `node` and its `parent`.
+        if (methods && methods.enter) {
+            methods.enter(node, parent);
+        }
+
+        // Next we are going to split things up by the current node type.
+        switch (node.type) {
+
+            // We'll start with our top level `Program`. Since Program nodes have a
+            // property named body that has an array of nodes, we will call
+            // `traverseArray` to traverse down into them.
+            //
+            // (Remember that `traverseArray` will in turn call `traverseNode` so  we
+            // are causing the tree to be traversed recursively)
+            case 'Program':
+                traverseArray(node.body, node);
+                break;
+
+            // Next we do the same with `CallExpression` and traverse their `params`.
+            case 'CallExpression':
+                traverseArray(node.params, node);
+                break;
+
+            // In the cases of `NumberLiteral` and `StringLiteral` we don't have any
+            // child nodes to visit, so we'll just break.
+            case 'NumberLiteral':
+            case 'StringLiteral':
+                break;
+
+            // And again, if we haven't recognized the node type then we'll throw an
+            // error.
+            default:
+                throw new TypeError(node.type);
+        }
+
+        // If there is an `exit` method for this node type we'll call it with the
+        // `node` and its `parent`.
+        if (methods && methods.exit) {
+            methods.exit(node, parent);
+        }
     }
-  
+
     // Finally we kickstart the traverser by calling `traverseNode` with our ast
     // with no `parent` because the top level of the AST doesn't have a parent.
     traverseNode(ast, null);
-  }
-  
+}
+
 
 // So we have our transformer function which will accept the lisp ast.
 function transformer(ast) {
@@ -626,10 +641,10 @@ function transformer(ast) {
     // We'll create a `newAst` which like our previous AST will have a program
     // node.
     let newAst = {
-      type: 'Program',
-      body: [],
+        type: 'Program',
+        body: [],
     };
-  
+
     // Next I'm going to cheat a little and create a bit of a hack. We're going to
     // use a property named `context` on our parent nodes that we're going to push
     // nodes to their parent's `context`. Normally you would have a better
@@ -638,80 +653,80 @@ function transformer(ast) {
     // Just take note that the context is a reference *from* the old ast *to* the
     // new ast.
     ast._context = newAst.body;
-  
+
     // We'll start by calling the traverser function with our ast and a visitor.
     traverser(ast, {
-  
-      // The first visitor method accepts any `NumberLiteral`
-      NumberLiteral: {
-        // We'll visit them on enter.
-        enter(node, parent) {
-          // We'll create a new node also named `NumberLiteral` that we will push to
-          // the parent context.
-          parent._context.push({
-            type: 'NumberLiteral',
-            value: node.value,
-          });
-        },
-      },
-  
-      // Next we have `StringLiteral`
-      StringLiteral: {
-        enter(node, parent) {
-          parent._context.push({
-            type: 'StringLiteral',
-            value: node.value,
-          });
-        },
-      },
-  
-      // Next up, `CallExpression`.
-      CallExpression: {
-        enter(node, parent) {
-  
-          // We start creating a new node `CallExpression` with a nested
-          // `Identifier`.
-          let expression = {
-            type: 'CallExpression',
-            callee: {
-              type: 'Identifier',
-              name: node.name,
+
+        // The first visitor method accepts any `NumberLiteral`
+        NumberLiteral: {
+            // We'll visit them on enter.
+            enter(node, parent) {
+                // We'll create a new node also named `NumberLiteral` that we will push to
+                // the parent context.
+                parent._context.push({
+                    type: 'NumberLiteral',
+                    value: node.value,
+                });
             },
-            arguments: [],
-          };
-  
-          // Next we're going to define a new context on the original
-          // `CallExpression` node that will reference the `expression`'s arguments
-          // so that we can push arguments.
-          node._context = expression.arguments;
-  
-          // Then we're going to check if the parent node is a `CallExpression`.
-          // If it is not...
-          if (parent.type !== 'CallExpression') {
-  
-            // We're going to wrap our `CallExpression` node with an
-            // `ExpressionStatement`. We do this because the top level
-            // `CallExpression` in JavaScript are actually statements.
-            expression = {
-              type: 'ExpressionStatement',
-              expression: expression,
-            };
-          }
-  
-          // Last, we push our (possibly wrapped) `CallExpression` to the `parent`'s
-          // `context`.
-          parent._context.push(expression);
         },
-      }
+
+        // Next we have `StringLiteral`
+        StringLiteral: {
+            enter(node, parent) {
+                parent._context.push({
+                    type: 'StringLiteral',
+                    value: node.value,
+                });
+            },
+        },
+
+        // Next up, `CallExpression`.
+        CallExpression: {
+            enter(node, parent) {
+
+                // We start creating a new node `CallExpression` with a nested
+                // `Identifier`.
+                let expression = {
+                    type: 'CallExpression',
+                    callee: {
+                        type: 'Identifier',
+                        name: node.name,
+                    },
+                    arguments: [],
+                };
+
+                // Next we're going to define a new context on the original
+                // `CallExpression` node that will reference the `expression`'s arguments
+                // so that we can push arguments.
+                node._context = expression.arguments;
+
+                // Then we're going to check if the parent node is a `CallExpression`.
+                // If it is not...
+                if (parent.type !== 'CallExpression') {
+
+                    // We're going to wrap our `CallExpression` node with an
+                    // `ExpressionStatement`. We do this because the top level
+                    // `CallExpression` in JavaScript are actually statements.
+                    expression = {
+                        type: 'ExpressionStatement',
+                        expression: expression,
+                    };
+                }
+
+                // Last, we push our (possibly wrapped) `CallExpression` to the `parent`'s
+                // `context`.
+                parent._context.push(expression);
+            },
+        }
     });
-  
+
     // At the end of our transformer function we'll return the new ast that we
     // just created.
     return newAst;
 }
-  
-  
-  
+
+
+
 
 export {
     tokenizer,
