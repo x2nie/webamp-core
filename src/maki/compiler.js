@@ -87,8 +87,13 @@ function tokenizer(input) {
                 value += char;
                 char = input[++current];
             }
-            // tokens.push({ type: 'preprocessor', value: value.trim() });
-            const data = tokenizer(value.trim())
+            
+            let data
+            if(name=='include'){
+                data = value
+            } else {
+                data = tokenizer(value.trim())
+            }
             tokens.push({ type: 'macro', name, data });
             continue;
         }
