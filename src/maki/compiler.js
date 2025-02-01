@@ -115,7 +115,7 @@ function tokenizer(input) {
             // Check if it's a keyword or type
             if (
                 value === 'Global' || value === 'Function' || //value === 'System' || 
-                value === 'int' || value === 'return' || 
+                value === 'return' || 
                 value === 'class' || 
                 value === 'extern' 
             ) {
@@ -218,7 +218,7 @@ function parser(tokens) {
         }
 
         //* .CODE  | .STACKPROT
-        if (token.type === 'dot' && next().toUpperCase() == next()) {
+        if (token.type === 'dot' && next(1).toUpperCase() == next(1)) {
             current++;
             token = tokens[current++];
             return {
@@ -275,27 +275,28 @@ function parser(tokens) {
                 value+= token.value;
             }
             const node = {
-                type: 'Identifier',
+                type: 'identifier',
                 name: value,
             };
-            if(next()=='('){    //? it maybe a FuncDec or a Call
-                node.type = "CallExpression"
+            if(next()=='('){                    //? it maybe a FuncDec or a Call
                 const params = walk();
-
-                if(next()=='{'){
+                
+                if(next()=='{'){                //? its a FuncDef
                     node.type = "FunctionDeclaration"
                     node.parameters = params.params
-                    node.body = walk().body; //? codeDomain
+                    node.body = walk().body;    //? codeDomain
                 } else {
-                    node.arguments = params.params
+                    node.type = "CallExpression"
+                    node.arguments = params.params.filter(el => el.type != 'comma')
+                    // current++
                 }
-                // current++
-                // return {
-                //     type: 'FunctionDeclaration',
-                //     name: value,
-                //     params,
-                // };
             }
+            // else if(nextis('identifier')){
+            //     node.type = 'LocalVar'
+            //     node.varType = value
+            //     token = tokens[current++];
+            //     node.name = token.value
+            // }
             return node
         }
 
@@ -323,12 +324,14 @@ function parser(tokens) {
         // Handle dots (.)
         if (token.type === 'dot') {
             current++;
-            const object = walk(); // Get the object
-            const property = walk(); // Get the property or method
+            // const object = walk(); // Get the object
+            // const property = walk(); // Get the property or method
+            const value = walk(); // Get the property or method
             return {
                 type: 'MemberExpression',
-                object,
-                property,
+                // object,
+                // property,
+                value
             };
         }
 
@@ -418,8 +421,20 @@ function parser(tokens) {
                 body: []
             };
             while ( !(token.value == '}' && token.type == 'symbol') ) {
-                node.body.push(walk());
+                // node.body.push(walk());
                 token = tokens[current];
+                debugger
+                const statement = {
+                    type: 'ExpressionStatement',
+                    body: []
+                }
+                while ( token.type != 'semi' && !(token.value == '}' && token.type == 'symbol') ) {
+                    statement.body.push(walk());
+                    token = tokens[current];
+                }
+                token = tokens[++current];
+                
+                node.body.push(statement)
             }
       
             current++;
