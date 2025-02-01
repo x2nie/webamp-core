@@ -1,16 +1,14 @@
-function isa(token, type) {
-    return token && token.type == type
-}
 
 // Tokenizer
 function tokenizer(input) {
     const tokens = [];
     let current = 0;
-
+    
     const WHITESPACE = /\s/;
     const NUMBERS = /[0-9]/;
     const LETTERS = /[a-z_]/i;
     const GUID = /[0-9\-a-z]/i;
+    const KEYWORDS = 'extern global class function if else return'.split(' ')
 
     while (current < input.length) {
         let char = input[current];
@@ -121,13 +119,7 @@ function tokenizer(input) {
             }
 
             // Check if it's a keyword or type
-            if (
-                value === 'Global' || value === 'Function' || //value === 'System' || 
-                value === 'return' ||
-                value === 'class' ||
-                value === 'if' ||
-                value === 'extern'
-            ) {
+            if (KEYWORDS.includes(value.toLowerCase())) {
                 tokens.push({ type: 'keyword', value });
             } else {
                 tokens.push({ type: 'identifier', value });

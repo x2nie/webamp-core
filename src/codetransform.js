@@ -63,6 +63,9 @@ extern class @{2D2D1376-BE0A-4CB9-BC0C-57E6E4C999F5}@ GuiObject &Form;
 
 // class tree member functions & events
 
+extern TreeItem.editLabel();
+extern Int TreeItem.hasSubItems();
+
 //*****************************************************************************
 // Object CLASS
 //*****************************************************************************
@@ -173,8 +176,8 @@ SongStop.onTimer(){
 
 `
 
-// input = std_mi
-input = song_stopper_m
+input = std_mi
+// input = song_stopper_m
 document.getElementById('code').innerText = input
 const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
 // console.log(tokens)
