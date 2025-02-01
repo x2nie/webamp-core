@@ -2,3 +2,4 @@ build/
 temp/
 extracted-*/
 node_modules
+*0.*

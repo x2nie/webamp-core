@@ -619,12 +619,14 @@ function traverser(ast, visitor) {
             // child nodes to visit, so we'll just break.
             case 'NumberLiteral':
             case 'StringLiteral':
+            case 'macro':
                 break;
 
             // And again, if we haven't recognized the node type then we'll throw an
             // error.
             default:
-                throw new TypeError(node.type);
+                // throw new TypeError(node.type);
+                console.log('untransformed',node.type, node)
         }
 
         // If there is an `exit` method for this node type we'll call it with the
@@ -647,7 +649,10 @@ function transformer(ast) {
     // node.
     let newAst = {
         type: 'Program',
+        registry: [],
+        variables: [],
         body: [],
+        externals: [],
     };
 
     // Next I'm going to cheat a little and create a bit of a hack. We're going to
@@ -658,6 +663,8 @@ function transformer(ast) {
     // Just take note that the context is a reference *from* the old ast *to* the
     // new ast.
     ast._context = newAst.body;
+    ast._registry = newAst.registry;
+    ast._variables = newAst.variables;
 
     // We'll start by calling the traverser function with our ast and a visitor.
     traverser(ast, {
@@ -682,6 +689,27 @@ function transformer(ast) {
                     type: 'StringLiteral',
                     value: node.value,
                 });
+            },
+        },
+
+        ClassRegistry: {
+            enter(node, parent) {
+                parent._registry.push({
+                    key: node.data[0].value,
+                    alias: node.data[node.data.length -1].name
+                });
+            },
+        },
+
+        GlobalDeclaration: {
+            enter(node, parent) {
+                node.declarations.forEach(d =>{
+                    parent._variables.push({
+                        global: true,
+                        name: d.value,
+                        type: node.varType,
+                    });
+                })
             },
         },
 

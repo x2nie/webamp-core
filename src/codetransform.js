@@ -1,4 +1,4 @@
-import { tokenizer, parser } from "./maki/compiler";
+import { tokenizer, parser, transformer } from "./maki/compiler";
 
 let input = `
 /*
@@ -178,11 +178,14 @@ SongStop.onTimer(){
 
 `
 
-input = std_mi
+// input = std_mi
 // input = song_stopper_m
+input = song_stopper_m
 document.getElementById('code').innerText = input
+input = std_mi + song_stopper_m
 const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
 // console.log(tokens)
 const ast = parser(tokens);         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
+const ast2 = transformer(ast);         document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2)
 
 // window.loaded()
