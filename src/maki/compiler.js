@@ -650,6 +650,7 @@ function transformer(ast) {
     let newAst = {
         type: 'Program',
         registry: [],
+        methods: [],
         variables: [],
         body: [],
         externals: [],
@@ -664,6 +665,7 @@ function transformer(ast) {
     // new ast.
     ast._context = newAst.body;
     ast._registry = newAst.registry;
+    ast._methods = newAst.methods;
     ast._variables = newAst.variables;
 
     // We'll start by calling the traverser function with our ast and a visitor.
@@ -701,13 +703,26 @@ function transformer(ast) {
             },
         },
 
+        FunctionDeclaration: {
+            enter(node, parent) {
+                const [className, methodName] = node.name.split('.')
+                const obj = parent._registry.find(cls => cls.alias == className)
+                const classIndex = parent._registry.indexOf(obj)
+                if(!methodName) return; //* ignore Custom
+                parent._methods.push({
+                    classIndex: classIndex,
+                    string: methodName,
+                });
+            },
+        },
+
         GlobalDeclaration: {
             enter(node, parent) {
                 node.declarations.forEach(d =>{
                     parent._variables.push({
                         global: true,
-                        name: d.value,
                         type: node.varType,
+                        name: d.value,
                     });
                 })
             },
