@@ -652,6 +652,8 @@ function transformer(ast) {
         registry: [],
         methods: [],
         variables: [],
+        strings: [],
+        bindngs: [],
         body: [],
         externals: [],
     };
@@ -667,9 +669,25 @@ function transformer(ast) {
     ast._registry = newAst.registry;
     ast._methods = newAst.methods;
     ast._variables = newAst.variables;
+    ast._bindngs = newAst.bindngs;
 
     // We'll start by calling the traverser function with our ast and a visitor.
     traverser(ast, {
+
+        Program: {
+            enter(node, parent) {
+                node._variables.push({
+                    global: true,
+                    name: 'System',
+                    isObject: 1,
+                });
+                node._variables.push({
+                    global: true,
+                    name: 'NULL',
+                    isObject: 0,
+                });
+            },
+        },
 
         // The first visitor method accepts any `NumberLiteral`
         NumberLiteral: {
@@ -706,12 +724,29 @@ function transformer(ast) {
         FunctionDeclaration: {
             enter(node, parent) {
                 const [className, methodName] = node.name.split('.')
-                const obj = parent._registry.find(cls => cls.alias == className)
-                const classIndex = parent._registry.indexOf(obj)
-                if(!methodName) return; //* ignore Custom
+                if(!methodName) return; //* ignore Custom Function
+                let obj = parent._registry.find(cls => cls.alias == className)
+                const variable = parent._variables.find(v => v.name == className)
+                // debugger
+                const variableIndex = parent._variables.indexOf(variable)
+                if(obj == null){
+                    obj = parent._registry.find(cls => cls.alias == variable.type)
+                }
+                let classIndex = parent._registry.indexOf(obj)
+                //? method
                 parent._methods.push({
-                    classIndex: classIndex,
+                    classIndex,
                     string: methodName,
+                });
+
+                //let say commands has been generated
+                //? binding
+                parent._bindngs.push({
+                    variableIndex,
+                    methodIndex: parent._methods.length -1,
+                    binaryOffset: -1,
+                    className, methodName, 
+                    // classIndex,
                 });
             },
         },

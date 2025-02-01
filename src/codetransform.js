@@ -58,6 +58,7 @@ extern class @{51654971-0D87-4a51-91E3-A6B53235F3E7}@ @{00000000-0000-0000-0000-
 extern class @{D6F50F64-93FA-49b7-93F1-BA66EFAE3E98}@ Object _predecl System;
 extern class @{E90DC47B-840D-4ae7-B02C-040BD275F7FC}@ Object GuiObject;
 extern class @{B2023AB5-434D-4ba1-BEAE-59637503F3C6}@ Object &Layer;
+extern class @{5D0C5BB6-7DE1-4b1f-A70F-8D1659941941}@ Object &Timer;
 extern class @{6B64CD27-5A26-4c4b-8C59-E6A70CF6493A}@ Layer &AnimatedLayer;
 extern class @{2D2D1376-BE0A-4CB9-BC0C-57E6E4C999F5}@ GuiObject &Form;
 
