@@ -1,12 +1,13 @@
 import { tokenizer, parser } from "./maki/compiler";
 
 let input = `
+/*
 #include "../../lib/std.mi"
 
 Global Button play_button, pause_button;
 Global int VISMode;
 Global int num = 0;
-
+*/
 Function addInts(int a, int b);
 
 play_button.onLeftClick () {
@@ -30,12 +31,13 @@ System.onScriptLoaded()
 `;
 
 const std_mi = `
-//----------------------------------------------------------------------------------------------------------------
+//--------------------------------------------
 // std.mi
 //
 // standard definitions for internal objects
-//----------------------------------------------------------------------------------------------------------------
+//--------------------------------------------
 
+/*
 #ifndef __STD_MI
 #define __STD_MI
 
@@ -45,6 +47,7 @@ const std_mi = `
 #ifndef false
     #define false 0
 #endif
+*/
 
 #define MC_TARGET "Winamp 5.02 (skin version 1.1)"
 
@@ -98,9 +101,47 @@ extern String Object.getId();
 extern Int Object.onNotify(String command, String param, int a, int b);
 
 
-#endif`;
+// predecl system symbols
+.CODE
 
-input = std_mi
+    // This function is called by System.onScriptLoaded() as the first thing it does. 
+    // Subsequent events check
+    // __deprecated_runtime before continuing. If you have no System.onScriptLoaded(), 
+    // you will have no version check.
+
+    // This is to ensure that runtimes that do not have stack protection (that is wa3, 
+    // wa5 and wa5.01) do not crash when trying to unexisting functions (with 
+    // parameters, since parameterless functions would not crash), that is, functions 
+    // that are meant for a higher version number than that of the runtime
+    // the script is running on.
+
+Function Int versionCheck();
+
+Int versionCheck()
+{
+    Double v = getRuntimeVersion();
+    if (v < VCPU_VERSION || v > 65535)
+    {
+        __deprecated_runtime = 1;
+        int last = getPrivateInt(getSkinName(), "runtimecheck", 0);
+        int now = getTimeOfDay();
+        if (now - last < 5000 && last < now)
+            return 0;
+        setPrivateInt(getSkinName(), "runtimecheck", getTimeOfDay());
+        messageBox("This script requires " + MC_TARGET, "Error", 1, "");
+        return 0;
+    }
+    return 1;
+}
+
+// begin protecting the stack, anything below this requires a getRuntimeVersion() >= 1 and <= 65535
+.STACKPROT
+
+
+//#endif
+`;
+
+// input = std_mi
 document.getElementById('code').innerText = input
 const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
 // console.log(tokens)
