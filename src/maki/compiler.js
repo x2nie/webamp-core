@@ -228,7 +228,7 @@ function parser(tokens) {
             }
         }
 
-        if (token.value === 'extern') {
+        if (token.value === 'extern' && nextis('keyword', 1)) {
             current++;
             token = tokens[current++];
             // const name = token.value;
@@ -241,10 +241,23 @@ function parser(tokens) {
             }
             current++; // Skip ')'
             return {
-                type: 'Registry',
+                type: 'ClassRegistry',
                 varType: token,
                 data,
             };
+        }
+        else if (token.value === 'extern') {
+            current++;
+            let retType = null
+            let node = walk()
+            if(node.type=='identifier'){
+                retType = node.name || node.value
+                node = walk()
+            }
+            current++; //* skip semicolon
+            node.type = 'ExternalMethod'
+            node.retType = retType
+            return node;
         }
 
         // Handle numbers

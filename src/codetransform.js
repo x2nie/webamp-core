@@ -8,13 +8,15 @@ Global Button play_button, pause_button;
 Global int VISMode;
 Global int num = 0;
 */
-Function addInts(int a, int b);
+// Function addInts(int a, int b);
+Function int addInts(int a, int b);
 
 play_button.onLeftClick () {
     messageBox("play_button.onLeftClick", "Success", 0, "");
 }
 
-addInts (int a, int b)
+// addInts (int a, int b)
+int addInts (int a, int b)
 {
     Int sum = a + b;
     return sum;
