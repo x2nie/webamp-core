@@ -180,10 +180,10 @@ SongStop.onTimer(){
 `
 
 // input = std_mi
-// input = song_stopper_m
 input = song_stopper_m
+// input = song_stopper_m
 document.getElementById('code').innerText = input
-input = std_mi + song_stopper_m
+// input = std_mi + input
 const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
 // console.log(tokens)
 const ast = parser(tokens);         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)

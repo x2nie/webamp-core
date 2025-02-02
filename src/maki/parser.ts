@@ -242,8 +242,8 @@ class MakiParser {
     };
   }
 
-  newBlock():Block{
-    const b = new Block()
+  newBlock(arg:any={}):Block{
+    const b = new Block(arg)
     b.data.start = this.makiFile.getPosition();
     b.makiFile = this.makiFile;
     this.blocks.push(b)
@@ -462,12 +462,21 @@ class MakiParser {
     let i = 0;
     while (count--) {
       block = this.newBlock()
+
+      let c = block.newChild({})
       const n = this.makiFile.readUInt32LE();
       const variable = variables[n];
+      c.end({name:'var index', value: n})
+      
       // TODO: Assert this is of type string.
+      c = block.newChild({})
       const value = this.makiFile.readString();
+      c.end({name:'string', value:`"${value}"`})
+
       // TODO: Don't mutate
       variable.value = value;
+      const varBlock = this.findBlock('variable', n)
+      varBlock.data.value = varBlock.data.value.replace('(null)', `("${value}")`)
       block.end({ index: i++, type:'const',value:`"${value}"`})
     }
   }
@@ -519,11 +528,16 @@ class MakiParser {
     const start = makiFile.getPosition();
     let i = 0;
     while (makiFile.getPosition() < start + length) {
-      block = this.newBlock()
+      block = this.newBlock({arg:''})
       // commands.push(this.parseComand({ start, makiFile, length, block }));
       const command = this.parseComand({ start, makiFile, length, block })
       commands.push(command);
-      block.end({ /* index: i++,  */index: command.offset, type:'command', 'value': block.data.opcode+' | '+ JSON.stringify(commands[commands.length-1]) })
+      // block.end({ /* index: i++,  */index: command.offset, type:'command', 'value': block.data.opcode+' | '+ JSON.stringify(commands[commands.length-1]) })
+      block.end({ 
+        index: command.offset, 
+        type:'command', 
+        value: block.data.opcode+'  ' +block.data.arg // + JSON.stringify(commands[commands.length-1]) 
+      })
     }
 
     return commands;
@@ -539,7 +553,8 @@ class MakiParser {
     const opcode = makiFile.readUInt8();
     const cmd = COMMANDS[opcode]; //* Block stuff
     c.end({name: 'opcode', value:opcode + ` | ${cmd.name} | ${cmd.short|| ''} `})
-    block.data.opcode = `${cmd.name.toUpperCase().padStart(5, '_')} | ${opcode.toString().padStart(3, ' ')}`
+    // block.data.opcode = `${cmd.name.toUpperCase().padStart(5, '_')} | ${opcode.toString().padStart(3, ' ')}`
+    block.data.opcode = `${cmd.name.toUpperCase().padStart(5, ' ')}`
     block.data.offset = pos;
 
     const command = {
@@ -563,13 +578,15 @@ class MakiParser {
         const raw_arg = makiFile.readInt32LE();
         arg = raw_arg + 5 + pos;
 
-        c.end({name: 'cmd.arg', value:raw_arg})
+        c.end({name: 'cmd.arg', value:`${raw_arg} (raw) | adjusted: ${arg}`})
+        block.data.arg = c.data.value;
         break;
         
       case "VARIABLE_OFFSET":
         c = block.newChild({})
         arg = makiFile.readUInt32LE();
         c.end({name: 'var.arg', value:arg})
+        block.data.arg = c.data.value;
         break;
       default:
         throw new Error("Invalid argType");

@@ -449,17 +449,18 @@ function parser(tokens) {
             while (!(token.value == '}' && token.type == 'symbol')) {
                 // node.body.push(walk());
                 token = tokens[current];
-                const statement = {
-                    type: 'ExpressionStatement',
-                    body: []
-                }
+                const body = []
                 while (token.type != 'semi' && !(token.value == '}' && token.type == 'symbol')) {
-                    statement.body.push(walk());
+                    body.push(walk());
                     token = tokens[current];
                 }
-                token = tokens[++current];
-
+                const statement = {
+                    type: 'ExpressionStatement',
+                    body: parseStatement(body.filter(token => token != null)),
+                }
                 node.body.push(statement)
+                token = tokens[++current];
+                
             }
 
             current++;
@@ -553,6 +554,123 @@ function parser(tokens) {
     }
 
     return ast;
+}
+
+function parseStatement(tokens){
+    //* it is because we need to take care a statement differently than
+    //* syntax in root.
+    const BINARY_OPERATORS = ["+", "-", "*", "/", "%", "|", "&", "^", "==", "!=", "<", ">", "<=", ">="]
+    const ASSIGNMENT_OPERATORS = ["+=", "=", "-=", "*=", "/=", "%="];
+    let current = 0;
+    const body = [];
+
+
+    function nextis(type, i = 1) {
+        let token = tokens[current + i]
+        return token && token.type == type
+    }
+
+    function next(i = 0) {
+        let token = tokens[current + i]
+        return token.value || ''
+    }
+
+    function walk() {
+        let token = tokens[current]; let value;
+
+        if(!token){
+            debugger
+        }
+
+        if (token.type === 'identifier' && nextis('identifier')) {
+            //* ie. `int sum ...`
+            const varType = token.name;
+            token = tokens[++current]
+            current++;
+            return {
+                type: 'LocalVar',
+                varType,
+                name: token.name
+            }; 
+        }
+        
+       
+        if (token.type == 'symbol' && BINARY_OPERATORS.includes(token.value)) {
+            const left = body.pop()
+            const operator = token.value;
+            current++;
+            const right = walk()
+            // current++;
+            // token = tokens[++current]
+            return {
+                type: 'BinaryExpression',
+                left,
+                operator,
+                right
+            }; 
+        }
+        // if (token.type === 'identifier' && BINARY_OPERATORS.includes(next())) {
+        //     const left = token
+        //     token = tokens[++current]
+        //     const operator = token.value;
+        //     // current++;
+        //     const right = walk()
+        //     // current++;
+        //     // token = tokens[++current]
+        //     return {
+        //         type: 'BinaryExpression',
+        //         left,
+        //         operator,
+        //         right
+        //     }; 
+        // }
+
+        if (token.type === 'Keyword' && token.name == 'return') {
+            token = tokens[++current]
+            current++;
+            return {
+                type: 'Return',
+                value: token,
+            }; 
+        }
+
+        current++;
+        return token
+
+    }
+
+    //? 1st pass: binary
+    while (current < tokens.length) {
+        const node = walk();
+        if (node !== null) { // Skip preprocessor directives, commas, and semicolons
+            body.push(node);
+        }
+    }
+
+    //? 2nd pass: assignment
+    for(current = body.length -1; current >= 0; current--){
+        let token = body[current];
+         if (token.type == 'symbol' && ASSIGNMENT_OPERATORS.includes(token.value)) {
+            const [left, _, right] = body.splice(current -1, 3)
+            // const left = body.pop()
+            const operator = _.value;
+            // current++;
+            // const right = walk()
+            // current++;
+            // token = tokens[++current]
+            body.splice(current -1, 0, [{
+                type: 'Assignment',
+                left,
+                operator,
+                right
+            }]) 
+            current--;
+        }
+    }
+
+
+    return body;
+
 }
 
 function tokens2parameters(tokens) {

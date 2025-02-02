@@ -366,7 +366,8 @@ class Decompiler {
           const methodDefinition = getMethod(guid, method.name);
           const obj = stack.pop();
           if (obj.kind !== "IDENTIFIER") {
-            throw new Error("Expectd ident");
+            // throw new Error("Expectd ident");
+            console.info('throw new Error("Expectd ident");')
           }
           const args = methodDefinition.parameters.map((param) => {
             return stack.pop();
@@ -451,19 +452,19 @@ async function main() {
   // const skin = "assets/skins/WinampModern566.wal";
   // const script = "scripts/eq.maki";
 
-  const response = await fetch(skin);
-  const data = await response.blob();
-  const zip = await JSZip.loadAsync(data);
+  // const response = await fetch(skin);
+  // const data = await response.blob();
+  // const zip = await JSZip.loadAsync(data);
 
-  // const makiFile = zip.file(script);
-  const makiFile = getCaseInsensitiveFile(zip, script);
-  const scriptContents = await makiFile.async("arraybuffer");
+  // // const makiFile = zip.file(script);
+  // const makiFile = getCaseInsensitiveFile(zip, script);
+  // const scriptContents = await makiFile.async("arraybuffer");
 
-  // const makiPath = assureUrl()
-  // debugger
-  // // fetch(makiPath).then(async (response) => {
-  // const response = await fetch(makiPath);
-  // const scriptContents = await response.arrayBuffer();
+  const makiPath = assureUrl()
+  debugger
+  // fetch(makiPath).then(async (response) => {
+  const response = await fetch(makiPath);
+  const scriptContents = await response.arrayBuffer();
 
 
   // TODO: Try catch?
