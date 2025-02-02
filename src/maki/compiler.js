@@ -8,7 +8,7 @@ function tokenizer(input) {
     const NUMBERS = /[0-9]/;
     const LETTERS = /[a-z_]/i;
     const GUID = /[0-9\-a-z]/i;
-    const KEYWORDS = 'extern global class function if else return'.split(' ')
+    const KEYWORDS = 'extern global new class function if else return'.split(' ')
 
     while (current < input.length) {
         let char = input[current];
@@ -446,13 +446,16 @@ function parser(tokens) {
                 // name: prevToken.value,
                 body: []
             };
-            while (!(token.value == '}' && token.type == 'symbol')) {
+            while (token && !(token.value == '}' && token.type == 'symbol')) {
                 // node.body.push(walk());
                 token = tokens[current];
                 const body = []
-                while (token.type != 'semi' && !(token.value == '}' && token.type == 'symbol')) {
-                    body.push(walk());
+                while (token && token.type != 'semi' && !(token.value == '}' && token.type == 'symbol')) {
+                    // body.push(walk());
+                    const c = walk();
+                    c && body.push(c);
                     token = tokens[current];
+                    // if(!token) debugger;
                 }
                 const statement = {
                     type: 'ExpressionStatement',
@@ -648,6 +651,9 @@ function parseStatement(tokens){
     }
 
     //? 2nd pass: assignment
+    //TODO: join al "MemberExpression" into "DotTail", maybe before binary
+
+    //? 3rd pass: assignment
     for(current = body.length -1; current >= 0; current--){
         let token = body[current];
          if (token.type == 'symbol' && ASSIGNMENT_OPERATORS.includes(token.value)) {

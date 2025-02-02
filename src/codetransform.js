@@ -7,6 +7,7 @@ let input = `
 Global Button play_button, pause_button;
 Global int VISMode;
 Global int num = 0;
+Global Timer SongStop;
 */
 // Function addInts(int a, int b);
 Function int addInts(int a, int b);
@@ -16,20 +17,29 @@ play_button.onLeftClick () {
 }
 
 // addInts (int a, int b)
-int addInts (int a, int b)
+/*int addInts (int a, int b)
 {
     Int sum = a + b;
     return sum;
-}
+}*/
 
 System.onScriptLoaded()
 {
+    SongStop = new Timer;
     messageBox("onScriptLoaded", "Success", 0, "");
 
     play_button = getContainer("main").getLayout("normal").findObject("Play");
 
-    play_button.leftClick();
+    // play_button.leftClick();
 }
+SongStop.onTimer(){
+    // if(getPosition() >= 5000){
+        SongStop.stop();
+        System.pause();
+    // }
+    debugtext.setText(integerToString(getPosition()));
+}
+
 `;
 
 const std_mi = `
@@ -180,13 +190,13 @@ SongStop.onTimer(){
 `
 
 // input = std_mi
-input = song_stopper_m
+// input = song_stopper_m
 // input = song_stopper_m
 document.getElementById('code').innerText = input
 // input = std_mi + input
 const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
 // console.log(tokens)
-const ast = parser(tokens);         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
+const ast = parser(tokens.filter(tk => tk !=null & tk.type != 'comment'));         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
 const ast2 = transformer(ast);         document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2)
 
 // window.loaded()
