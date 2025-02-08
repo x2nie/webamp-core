@@ -277,6 +277,13 @@ function parser(tokens) {
                 value: token.value,
             };
         }
+        if (token.type === 'keyword' && token.value === 'new') {
+            current++;
+            return {
+                type: 'Instanciate',
+                target: tokens[current++],
+            };
+        }
 
         // Handle identifiers
         if (token.type === 'identifier') {
@@ -446,11 +453,11 @@ function parser(tokens) {
                 // name: prevToken.value,
                 body: []
             };
-            while (token && !(token.value == '}' && token.type == 'symbol')) {
+            while (/* token && */ !(token.value == '}' && token.type == 'symbol')) {
                 // node.body.push(walk());
                 token = tokens[current];
                 const body = []
-                while (token && token.type != 'semi' && !(token.value == '}' && token.type == 'symbol')) {
+                while (/* token && */ token.type != 'semi' && !(token.value == '}' && token.type == 'symbol')) {
                     // body.push(walk());
                     const c = walk();
                     c && body.push(c);
