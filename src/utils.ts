@@ -97,7 +97,7 @@ export function normalizeDomId(id: string) {
   return id.replace(/[^a-zA-Z0-9]/g, "-");
 }
 
-export function removeAllChildNodes(parent: Element) {
+export function removeAllChildNodes(parent: HTMLElement) {
   while (parent.firstChild) {
     parent.removeChild(parent.firstChild);
   }
