@@ -26,6 +26,10 @@
     body > div {
         margin: 5px;
         max-width: 60ch;
+        max-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
     }
     h3 {
         margin: 5px 0;
@@ -35,6 +39,12 @@
         border: 1px solid blue;
         max-height: calc(100vh - 65px);
         overflow-y: auto;
+        flex-grow: 1;
+        flex-shrink: 1;
+        margin: 0;
+    }
+    pre#code {
+      flex-shrink: 0;
     }
     </style>
   </head>
@@ -48,7 +58,9 @@
           <option value="/assets/skins/SimpleTutorial/test-script">script</option>
         </select>
       </h3>
-      <pre id="code"></pre></div>
+      <pre id="code"></pre>
+      <pre id="std"></pre>
+    </div>
     <div><h3>Token</h3><pre id="token"></pre></div>
     <div><h3>AST </h3><pre id="parsed"></pre></div>
     <!-- <div><h3>AST 2</h3><pre id="parsed2"></pre></div> -->

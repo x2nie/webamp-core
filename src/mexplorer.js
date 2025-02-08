@@ -308,7 +308,8 @@ class Root extends Component {
 
   setup() {
     // this.state = useState({binary:[], blocks:[]});
-    this.state = useState({file:''});
+    const makiPath = localStorage.getItem("makiPath") || ''
+    this.state = useState({file: makiPath});
     this.binary = useState(this.env.binary)
     // onWillStart(async () => {
     //   const makiPath = assureUrl()
@@ -316,6 +317,7 @@ class Root extends Component {
     // })
     useEffect(
       (makiPath) => {
+        localStorage.setItem("makiPath", makiPath);
         makiPath && this.loadMaki(`${makiPath}.maki`)
       },
       () => [this.state.file]

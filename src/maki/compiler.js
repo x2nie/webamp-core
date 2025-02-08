@@ -7,7 +7,7 @@ function tokenizer(input) {
     const WHITESPACE = /\s/;
     const NUMBERS = /[0-9]/;
     const LETTERS = /[a-z_]/i;
-    const GUID = /[0-9\-a-z]/i;
+    const GUID = /[0-9\-a-z ]/i;
     const KEYWORDS = 'extern global new class function if else return'.split(' ')
 
     while (current < input.length) {
@@ -59,7 +59,7 @@ function tokenizer(input) {
             let value = '';
             char = input[current++];
             while (GUID.test(char)) {
-                value += char;
+                value += char.trim();
                 char = input[++current];
             }
             current++
