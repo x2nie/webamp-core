@@ -580,11 +580,6 @@ function parseStatement(tokens){
         return token && token.type == type
     }
 
-    function next(i = 0) {
-        let token = tokens[current + i]
-        return token.value || ''
-    }
-
     function walk() {
         let token = tokens[current]; let value;
 
@@ -659,6 +654,24 @@ function parseStatement(tokens){
 
     //? 2nd pass: assignment
     //TODO: join al "MemberExpression" into "DotTail", maybe before binary
+    for(current = 0; current < body.length; current++){
+        function bodyNextis(type, i = 1) {
+            let token = body[current + i]
+            return token && token.type == type
+        }
+        // let token = body[current];
+        while(bodyNextis('MemberExpression')){
+            const [left, right] = body.splice(current, 2)
+            const el = left.type == 'DotTail'? left : {
+                type: 'DotTail',
+                body: [left]
+            }
+            el.body.push(right.value)
+            body.splice(current, 0, el);
+            // debugger
+            // current++;
+        }
+    }
 
     //? 3rd pass: assignment
     for(current = body.length -1; current >= 0; current--){
@@ -687,7 +700,7 @@ function parseStatement(tokens){
 }
 
 function tokens2parameters(tokens) {
-    console.log('tokens2args >', tokens)
+    // console.log('tokens2args >', tokens)
     let result = [];
     for (let i = 0; i < tokens.length; i++) {
         if (tokens[i].type != "comma" && tokens[i + 1]?.type === "identifier") {
@@ -699,7 +712,7 @@ function tokens2parameters(tokens) {
             i++; // Lewati identifier karena sudah diproses
         }
     }
-    console.log('tokens2args <', result)
+    // console.log('tokens2args <', result)
     return result;
 }
 // So we define a traverser function which accepts an AST and a
