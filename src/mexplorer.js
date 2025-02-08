@@ -116,7 +116,7 @@ main();
 //   (found / total) * 100
 // )}% Complete) | ${Math.round(((found - dummy) / total) * 100)}% Real.`;
 
-import { Component, useState, mount, xml, onWillStart, reactive, markup } from "@odoo/owl";
+import { Component, useState, mount, xml, onWillStart, reactive, markup, useEffect } from "@odoo/owl";
 
 function assureUrl(){
   const url = new URL(window.location.href);
@@ -148,12 +148,13 @@ class HexEdit extends Component {
   </div>`
 
   setup(){
+    this.binary = useState(this.env.binary)
   }
 
   lines(){
     //? render line number, in hex
     // debugger
-    const {data, blocks} = this.env.binary
+    const {data, blocks} = this.binary
     const lineCount = Math.ceil(data.length / 16)
     const lines = [...Array(lineCount).keys()].map(n => (n * 16).toString(16).padStart(6, '0'))
     // console.log('lines:',lines)
@@ -164,7 +165,7 @@ class HexEdit extends Component {
   hexs(){
     //? render hexadecimal representation
     // debugger
-    const {data, blocks} = this.env.binary
+    const {data, blocks} = this.binary
     function hex(offset){
       const byte = data[offset]
       return byte.toString(16).padStart(2, "0");
@@ -205,7 +206,7 @@ class HexEdit extends Component {
   ascii(){
     //? render ascii (human readable) representation
     // debugger
-    const {data, blocks} = this.env.binary
+    const {data, blocks} = this.binary
     const ascii = data.map((b, i) => {
       let s = b >= 32 && b <= 126 ? String.fromCharCode(b) : ".";
       if(i%16==15)
@@ -229,7 +230,7 @@ class HexEdit extends Component {
 class BinTree extends Component {
   static template = xml`<div>
     Bintree
-    <t t-foreach="env.binary.blocks" t-as="block" t-key="block_index">
+    <t t-foreach="binary.blocks" t-as="block" t-key="block_index">
       <div t-attf-id="tree-#{block_index}" class="tree-item" t-att-data_index="block_index">
         <!-- <t  t-out="block.end - block.start" /> @ -->
         <!-- <t  t-out="block.start" /> -->
@@ -257,7 +258,8 @@ class BinTree extends Component {
   </div>`
 
   setup(){
-    this.blocks = useState(this.env.binary.blocks)
+    this.binary = useState(this.env.binary)
+    // this.blocks = useState(this.env.binary.blocks)
     this.selected = null;
   }
 
@@ -282,7 +284,7 @@ class BinTree extends Component {
   toggleChildren(ev){
     const el = ev.target.closest('.tree-item');
     const index = el.attributes.data_index.value
-    const block = this.blocks[index]
+    const block = this.binary.blocks[index]
     if(block.children){
       block.expanded = ! block.expanded
     }
@@ -291,34 +293,52 @@ class BinTree extends Component {
 
 class Root extends Component {
   static template = xml`
-    <HexEdit increment="2"/>
-    <BinTree/>`;
+    <div class="panel">
+      <select id="file-list" t-model="state.file">
+        <option value="/assets/skins/SimpleTutorial/SongStopper">SongStopper</option>
+        <option value="/assets/skins/SimpleTutorial/test-script">script</option>
+      </select>
+    </div>
+    <div class="body">
+      <HexEdit increment="2"/>
+      <BinTree/>
+    </div>
+    `;
   static components = { HexEdit, BinTree };
 
   setup() {
     // this.state = useState({binary:[], blocks:[]});
+    this.state = useState({file:''});
     this.binary = useState(this.env.binary)
-    onWillStart(async () => {
-      const makiPath = assureUrl()
+    // onWillStart(async () => {
+    //   const makiPath = assureUrl()
+    //   // })
+    // })
+    useEffect(
+      (makiPath) => {
+        makiPath && this.loadMaki(`${makiPath}.maki`)
+      },
+      () => [this.state.file]
+    )
+  }
 
-      // fetch(makiPath).then(async (response) => {
-      const response = await fetch(makiPath);
-        const scriptContents = await response.arrayBuffer();
-        if (scriptContents == null) {
-          `ScriptFile file not found at path ${makiPath}`;
-        } else {
-          const data = new Uint8Array(scriptContents);
-          this.binary.data = [...data];
-          // console.log( new Uint8Array(scriptContents));
-          // const parsedScriptXp = parseMakiXp(scriptContents);
-          // const parsedScript1 = parseMaki1(scriptContents, makiPath);
-          const parsedScriptXp = parseMaki1(scriptContents);
-          // explore(parsedScriptXp, parsedScript1);
-          this.binary.blocks = parsedScriptXp.blocks
-          console.log(parsedScriptXp)
-        }
-      // })
-    })
+  async loadMaki(makiPath){
+  // fetch(makiPath).then(async (response) => {
+    const response = await fetch(makiPath);
+    const scriptContents = await response.arrayBuffer();
+    if (scriptContents == null) {
+      `ScriptFile file not found at path ${makiPath}`;
+    } else {
+      const data = new Uint8Array(scriptContents);
+      this.binary.data = [...data];
+      // console.log( new Uint8Array(scriptContents));
+      // const parsedScriptXp = parseMakiXp(scriptContents);
+      // const parsedScript1 = parseMaki1(scriptContents, makiPath);
+      const parsedScriptXp = parseMaki1(scriptContents);
+      // explore(parsedScriptXp, parsedScript1);
+      this.binary.blocks = parsedScriptXp.blocks
+      console.log(parsedScriptXp)
+    }
   }
 }
 
