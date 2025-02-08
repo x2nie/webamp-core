@@ -1,14 +1,14 @@
 import { tokenizer, parser, transformer } from "./maki/compiler";
 
 let input = `
-/*
+// /*
 #include "../../lib/std.mi"
 
 Global Button play_button, pause_button;
 Global int VISMode;
 Global int num = 0;
 Global Timer SongStop;
-*/
+// */
 // Function addInts(int a, int b);
 Function int addInts(int a, int b);
 
@@ -188,15 +188,31 @@ SongStop.onTimer(){
 }
 
 `
-
-// input = std_mi
-// input = song_stopper_m
-// input = song_stopper_m
-document.getElementById('code').innerText = input
-// input = std_mi + input
-const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
-// console.log(tokens)
-const ast = parser(tokens.filter(tk => tk !=null & tk.type != 'comment'));         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
-const ast2 = transformer(ast);         document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2)
-
+function updateUI(input){
+    // input = std_mi
+    // input = song_stopper_m
+    // input = song_stopper_m
+    document.getElementById('code').innerText = input
+    // input = std_mi + input
+    const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
+    // console.log(tokens)
+    const ast = parser(tokens.filter(tk => tk !=null & tk.type != 'comment'));         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
+    const ast2 = transformer(ast);         document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2)
+}
 // window.loaded()
+async function fileChange(ev){
+    console.log(ev.target.value)
+    const url = `${ev.target.value}.m`
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+    const input = await response.text();
+    updateUI(input)
+}
+
+//? DEMO
+const comboobox = document.getElementById('file-list')
+comboobox.onchange = fileChange
+// Dispatch it.
+comboobox.dispatchEvent(new Event('change'));
