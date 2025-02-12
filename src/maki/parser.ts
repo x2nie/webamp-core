@@ -365,7 +365,7 @@ class MakiParser {
       
       c = block.newChild({})
       v = makiFile.readUInt8(); // system
-      c.end({name:'UNKNOWN 3', value: v})
+      c.end({name:'is System', value: v})
 
       if (subClass) {
         const variable = variables[typeOffset] as VariableObject;
