@@ -327,13 +327,13 @@ function parser(tokens) {
         }
 
         // Handle types (e.g., int)
-        if (token.type === 'keyword' && token.value === 'int') {
-            current++;
-            return {
-                type: 'Type',
-                name: 'int',
-            };
-        }
+        // if (token.type === 'keyword' && token.value === 'int') {
+        //     current++;
+        //     return {
+        //         type: 'Type',
+        //         name: 'int',
+        //     };
+        // }
 
         // Handle assignment (=)
         if (token.type === 'assignment') {
@@ -589,13 +589,13 @@ function parseStatement(tokens){
 
         if (token.type === 'identifier' && nextis('identifier')) {
             //* ie. `int sum ...`
-            const varType = token.name;
+            const varType = token.name || token.value;
             token = tokens[++current]
             current++;
             return {
                 type: 'LocalVar',
                 varType,
-                name: token.name
+                name: token.name || token.value
             }; 
         }
         
@@ -684,12 +684,12 @@ function parseStatement(tokens){
             // const right = walk()
             // current++;
             // token = tokens[++current]
-            body.splice(current -1, 0, [{
+            body.splice(current -1, 0, {
                 type: 'Assignment',
                 left,
                 operator,
                 right
-            }]) 
+            }) 
             current--;
         }
     }
@@ -800,6 +800,7 @@ function transformer(ast) {
         bindngs: [],
         body: [],
         externals: [],
+        binary: [],
     };
 
     // Next I'm going to cheat a little and create a bit of a hack. We're going to
@@ -809,17 +810,21 @@ function transformer(ast) {
     //
     // Just take note that the context is a reference *from* the old ast *to* the
     // new ast.
+    ast.binary = newAst.binary;
     ast._context = newAst.body;
     ast._registry = newAst.registry;
     ast._methods = newAst.methods;
     ast._variables = newAst.variables;
     ast._bindngs = newAst.bindngs;
+    ast._externals = newAst.externals;
 
     // We'll start by calling the traverser function with our ast and a visitor.
     traverser(ast, {
 
         Program: {
             enter(node, parent) {
+                node.binary.push('FG')
+                node.binary.push(3,4,23,0,0)
                 node._variables.push({
                     global: true,
                     name: 'System',
@@ -862,6 +867,15 @@ function transformer(ast) {
                     key: node.data[0].value,
                     alias: node.data[node.data.length -1].name
                 });
+            },
+        },
+
+        ExternalMethod: {
+            enter(node, parent) {
+                // node.pop('type')
+                const {type, name, ...method} = node
+                const [className, methodName] = name.split('.')
+            parent._externals.push({className, methodName, NAME: methodName.toUpperCase(), ...method});
             },
         },
 
@@ -952,11 +966,26 @@ function transformer(ast) {
     return newAst;
 }
 
+function code2statement(code){
+    const tokens = tokenizer(code);
+    const ast = parseStatement(tokens.filter(tk => tk !=null & tk.type != 'comment'));
+    // const ast2 = transformer(ast);
+    return ast
+}
 
+function code2ast(code){
+    const tokens = tokenizer(code);
+    const ast = parser(tokens.filter(tk => tk !=null & tk.type != 'comment'));
+    // const ast2 = transformer(ast);
+    return ast
+}
 
 
 export {
     tokenizer,
     parser,
     transformer,
+
+    code2ast,
+    code2statement,
 }

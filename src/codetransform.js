@@ -61,6 +61,10 @@ const std_mi = `
 #endif
 */
 
+#define MC_TARGET "Winamp 5.66 (skin version 1.36)"
+#define VCPU_VERSION 2
+
+
 #define MC_TARGET "Winamp 5.02 (skin version 1.1)"
 
 // GUIDS
@@ -162,6 +166,18 @@ extern String Object.getId();
 */
 extern Int Object.onNotify(String command, String param, int a, int b);
 
+extern System.onScriptLoaded();
+extern Int System.messageBox(String message, String msgtitle, Int flag, String notanymore_id);
+
+extern GuiObject GuiObject.findObject(String id);
+
+extern Container System.getContainer(String container_id);
+
+extern Layout Container.getLayout(String layout_id);
+
+extern Button.onLeftClick();
+extern Button.leftClick();
+extern Button.rightClick();
 
 // predecl system symbols
 .CODE
