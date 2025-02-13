@@ -297,6 +297,7 @@ class Root extends Component {
       <select id="file-list" t-model="state.file">
         <option value="/assets/skins/SimpleTutorial/SongStopper">SongStopper</option>
         <option value="/assets/skins/SimpleTutorial/test-script">script</option>
+        <option value="/assets/skins/WinampModernPP/scripts/songinfo">Songinfo debug.sym</option>
         <option value="/assets/skins/CornerAmp_Redux/scripts/corner">corner</option>
       </select>
     </div>
