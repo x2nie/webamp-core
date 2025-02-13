@@ -214,12 +214,16 @@ function parser(tokens) {
             current++;
             if (token.name == 'ifdef' || token.name == 'ifndef') {
                 //? such as #ifndef __STD_MI is crucial, it may take|ignore whole file
-                const block = [];
+                // const block = [];
+                const start = current;
                 while (!(tokens[current].type == 'macro' && tokens[current].name == 'endif')) {
                     // data.push(tokens[current]);
-                    block.push(walk());
+                    // block.push(walk());
+                    ast.body.push(walk())
                     // current++;
                 }
+                // debugger
+                const block = ast.body.splice(start, current - start)
                 current++;
                 return {
                     // type: 'Ifdef',
@@ -235,7 +239,7 @@ function parser(tokens) {
                 return {
                     type: 'Define',
                     name: token.data[0].value,
-                    value: token.data[1] || null, //? sometime `#define` has no value
+                    value: token.data[1] || {type:null}, //? sometime `#define` has no value
                 }
             }
             return token
@@ -397,7 +401,7 @@ function parser(tokens) {
         if (token.type === 'keyword' && token.value === 'Function') {
             current++
             let node = {
-                type: 'CustomFunctionHeader',
+                type: 'UserFunction_h',
                 retType: null,
             }
             // token = tokens[current++]; // Skip 'Function'
