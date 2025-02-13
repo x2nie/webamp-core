@@ -262,7 +262,7 @@ function updateUI(input){
     const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
     // console.log(tokens)
     const ast = parser(tokens.filter(tk => tk !=null & tk.type != 'comment'));         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
-    const ast2 = transformer(ast);         document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2)
+    // const ast2 = transformer(ast);         document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2)
 }
 // window.loaded()
 async function fileChange(ev){

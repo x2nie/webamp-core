@@ -514,6 +514,8 @@ function parser(tokens) {
             // if (nextis('symbol')) {
                 node.body.push(later)
             // }
+            if(nextis('semi')) current++; //semi
+            return node
         }
 
 
@@ -536,11 +538,12 @@ function parser(tokens) {
                 // name: prevToken.value,
                 body: []
             };
+            const COMPLETE_STATEMENT = ['semi', 'IfExpression', 'ElseExpression', 'ForExpression', 'CodeDomain']
             while (token && !(token.value == '}' && token.type == 'symbol')) {
                 // node.body.push(walk());
                 token = tokens[current];
                 const body = []
-                while (token && token.type != 'semi' && !(token.value == '}' && token.type == 'symbol')) {
+                while (token && !COMPLETE_STATEMENT.includes(token.type) && !(token.value == '}' && token.type == 'symbol')) {
                     // body.push(walk());
                     const c = walk();
                     c && body.push(c);
@@ -553,7 +556,9 @@ function parser(tokens) {
                     body: parseStatement(body.filter(token => token != null)),
                 }
                 node.body.push(statement)
-                token = tokens[++current];
+                if(!(token.value == '}' && token.type == 'symbol')){
+                    token = tokens[++current];
+                }
                 // if(!token) debugger;
                 
             }
