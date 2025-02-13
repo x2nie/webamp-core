@@ -416,7 +416,8 @@ function parser(tokens) {
 
             // token = tokens[++current]; // Skip '('
             // const params = [];
-            const params = walk();
+            let params = walk();
+            params.arguments = tokens2parameters(params.arguments)
             node = { ...params, ...node }
             // Object.assign(node, params)
             // token = tokens[++current];
