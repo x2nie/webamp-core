@@ -85,9 +85,9 @@ function tokenizer(input) {
                 name += char;
                 char = input[++current];
             }
-            if (name == 'endif') {
-                debugger
-            }
+            // if (name == 'endif') {
+            //     debugger
+            // }
             let value = '';
             char = input[current];
             while (char !== '\n' && current < input.length) {
@@ -222,10 +222,20 @@ function parser(tokens) {
                 }
                 current++;
                 return {
-                    type: 'Ifdef',
-                    name: token.name,
-                    data: token.data,
-                    codeDomain: block
+                    // type: 'Ifdef',
+                    // name: token.name,
+                    type: capitalizeFirstLetter(token.name),
+                    // data: token.data,
+                    expect: token.data[0].value,
+                    body: block
+                }
+            }
+
+            if (token.name == 'define') {
+                return {
+                    type: 'Define',
+                    name: token.data[0].value,
+                    value: token.data[1] || null, //? sometime `#define` has no value
                 }
             }
             return token
@@ -319,7 +329,7 @@ function parser(tokens) {
                 if (next() == '{') {                //? its a FuncDef
                     node.type = "FunctionDeclaration"
                     // debugger
-                    if(ast.body[ast.body.length-1].type == 'identifier'){
+                    if(ast.body.length && ast.body[ast.body.length-1].type == 'identifier'){
                         const theType = ast.body.pop()
                         node.retType = theType.name;
                     }
@@ -1056,6 +1066,10 @@ function transformer(ast) {
     // At the end of our transformer function we'll return the new ast that we
     // just created.
     return newAst;
+}
+
+function capitalizeFirstLetter(val) {
+    return String(val).charAt(0).toUpperCase() + String(val).slice(1);
 }
 
 function code2statement(code){

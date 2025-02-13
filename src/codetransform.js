@@ -49,7 +49,7 @@ const std_mi = `
 // standard definitions for internal objects
 //--------------------------------------------
 
-/*
+
 #ifndef __STD_MI
 #define __STD_MI
 
@@ -59,7 +59,7 @@ const std_mi = `
 #ifndef false
     #define false 0
 #endif
-*/
+
 
 #define MC_TARGET "Winamp 5.66 (skin version 1.36)"
 #define VCPU_VERSION 2
@@ -216,7 +216,7 @@ Int versionCheck()
 .STACKPROT
 
 
-//#endif
+#endif
 `;
 
 const song_stopper_m = `
@@ -262,7 +262,7 @@ function updateUI(input){
     const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
     // console.log(tokens)
     const ast = parser(tokens.filter(tk => tk !=null & tk.type != 'comment'));         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
-    // const ast2 = transformer(ast);         document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2)
+    const ast2 = transformer(ast);         document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2)
 }
 // window.loaded()
 async function fileChange(ev){
