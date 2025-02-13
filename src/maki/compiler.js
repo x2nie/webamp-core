@@ -1,6 +1,7 @@
 
 // Tokenizer
 function tokenizer(input) {
+    const TWINS = ['+', '-', '&', '|', '<', '>']
     const tokens = [];
     let current = 0;
     
@@ -170,6 +171,14 @@ function tokenizer(input) {
         // Handle other symbols
         tokens.push({ type: 'symbol', value: char });
         current++;
+
+        // handle twin-symbol
+        let lastChar = char
+        char = input[current];
+        if(char==lastChar && tokens[tokens.length-1].type=='symbol' && TWINS.includes(char)){
+            tokens[tokens.length-1].value += char;
+            current++
+        }
     }
 
     return tokens;
