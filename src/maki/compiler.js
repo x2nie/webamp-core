@@ -1,7 +1,6 @@
 
 // Tokenizer
 function tokenizer(input) {
-    const TWINS = ['+', '-', '&', '|', '<', '>']
     const tokens = [];
     let current = 0;
     
@@ -10,6 +9,7 @@ function tokenizer(input) {
     const LETTERS = /[a-z_]/i;
     const GUID = /[0-9\-a-z ]/i;
     const KEYWORDS = 'extern global new class function if else return'.split(' ')
+    const TWINS = ['+', '-', '&', '|', '<', '>']
 
     while (current < input.length) {
         let char = input[current];
