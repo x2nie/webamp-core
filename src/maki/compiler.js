@@ -13,8 +13,8 @@ function tokenizer(input) {
     const NUMBERS = /[0-9]/;
     const LETTERS = /[a-z_]/i;
     const GUID = /[0-9\-a-z ]/i;
-    const KEYWORDS = 'extern global new class function if else return'.split(' ')
-    const TWINS = ['+', '-', '&', '|', '<', '>']
+    const KEYWORDS = 'extern global new class function for if else return'.split(' ')
+    const TWINS = ['++', '--', '&&', '||', '<<', '==', '>>', '!=']
 
     while (current < input.length) {
         let char = input[current];
@@ -180,7 +180,7 @@ function tokenizer(input) {
         // handle twin-symbol
         let lastChar = char
         char = input[current];
-        if(char==lastChar && tokens[tokens.length-1].type=='symbol' && TWINS.includes(char)){
+        if(tokens[tokens.length-1].type=='symbol' && TWINS.includes(lastChar + char)){
             tokens[tokens.length-1].value += char;
             current++
         }
@@ -198,7 +198,7 @@ function parser(tokens) {
     }
     function next(i = 0) {
         let token = tokens[current + i]
-        return token.value || ''
+        return (token && token.value) || ''
     }
 
     function walk() {
@@ -463,7 +463,8 @@ function parser(tokens) {
             var node = {
                 type: 'IfExpression',
                 expect: walk(),
-                body: []
+                body: [],
+                // 'else': null,
             };
             var later = walk()
             if(later.type=='CodeDomain')
@@ -472,8 +473,49 @@ function parser(tokens) {
             // if (nextis('symbol')) {
                 node.body.push(later)
             // }
+            if(nextis('semi')) current++; //semi
             return node
         }
+        if (token.type === 'keyword' && token.value === 'else') {
+            //? handle `else`
+
+            // token = tokens[++current];
+            // if (nextis('keyword') && next('else')) {
+                current++;
+                const node = {
+                    type: 'ElseExpression',
+                    // expect: walk(),
+                    body: [],
+                    // 'else': null,
+                };
+                // node.else = []
+                later = walk()
+                if(later.type=='CodeDomain')
+                    node.body = later.body;
+                else
+                    node.body.push(later)
+            // }
+            if(nextis('semi')) current++; //semi
+            return node
+        }
+
+        if (token.type === 'keyword' && token.value === 'for') {
+            current++;
+            var node = {
+                type: 'ForExpression',
+                expect: walk(),
+                body: [],
+                else: null,
+            };
+            var later = walk()
+            if(later.type=='CodeDomain')
+                node.body = later.body;
+            else
+            // if (nextis('symbol')) {
+                node.body.push(later)
+            // }
+        }
+
 
         if (token.type === 'keyword' && token.value == 'return') {
             // token = tokens[++current]
@@ -494,23 +536,25 @@ function parser(tokens) {
                 // name: prevToken.value,
                 body: []
             };
-            while (/* token && */ !(token.value == '}' && token.type == 'symbol')) {
+            while (token && !(token.value == '}' && token.type == 'symbol')) {
                 // node.body.push(walk());
                 token = tokens[current];
                 const body = []
-                while (/* token && */ token.type != 'semi' && !(token.value == '}' && token.type == 'symbol')) {
+                while (token && token.type != 'semi' && !(token.value == '}' && token.type == 'symbol')) {
                     // body.push(walk());
                     const c = walk();
                     c && body.push(c);
                     token = tokens[current];
                     // if(!token) debugger;
                 }
+                console.log('found a statement:', body)
                 const statement = {
                     type: 'ExpressionStatement',
                     body: parseStatement(body.filter(token => token != null)),
                 }
                 node.body.push(statement)
                 token = tokens[++current];
+                // if(!token) debugger;
                 
             }
 
