@@ -350,16 +350,16 @@ function parser(tokens) {
         // }
 
         // Handle assignment (=)
-        if (token.type === 'assignment') {
-            current++;
-            const left = walk(); // Get the variable name
-            const right = walk(); // Get the assigned value
-            return {
-                type: 'Assignment',
-                left,
-                right,
-            };
-        }
+        // if (token.type === 'assignment') {
+        //     current++;
+        //     const left = walk(); // Get the variable name
+        //     const right = walk(); // Get the assigned value
+        //     return {
+        //         type: 'Assignment',
+        //         left,
+        //         right,
+        //     };
+        // }
 
         // Handle dots (.)
         if (token.type === 'dot') {
