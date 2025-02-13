@@ -659,7 +659,7 @@ function getFormattedId(id: string): string {
     /(........)(....)(....)(..)(..)(..)(..)(..)(..)(..)(..)/,
     //* "$1-$3-$2-$7$6-$5$4$11$10$9$8"
     (_, p1,p2,p3,p4,p5,p6,p7,p8,p9,pa,pb) => {
-      return `{${p1}-${p3}-${p2.toLowerCase()}-${p7}${p6}-${p5}${4}${pb}${pa}${p9}${p8}}`
+      return `{${p1}-${p3}-${p2.toLowerCase()}-${p7}${p6}-${p5}${p4}${pb}${pa}${p9}${p8}}`
     }
   );
   return formattedId//.toLowerCase();
