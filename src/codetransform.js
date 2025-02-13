@@ -1,4 +1,4 @@
-import { tokenizer, parser, transformer } from "./maki/compiler";
+import { tokenizer, parser, transformer, hideComments } from "./maki/compiler";
 
 let input = `
 // /*
@@ -257,6 +257,8 @@ function updateUI(input){
     document.getElementById('code').innerText = input
     input = std_mi + input
     document.getElementById('std').innerText = std_mi
+
+    input = hideComments(input)
     const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
     // console.log(tokens)
     const ast = parser(tokens.filter(tk => tk !=null & tk.type != 'comment'));         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)

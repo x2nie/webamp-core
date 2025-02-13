@@ -1,4 +1,9 @@
-
+function hideComments(code) {
+    //? replace anything inside comments with space, but preserve new line
+    return code
+        .replace(/\/\/[^\n]*/g, match => ' '.repeat(match.length)) // Ganti komentar satu baris dengan spasi
+        .replace(/\/\*[\s\S]*?\*\//g, match => match.replace(/[^\r\n]/g, ' ')); // Ganti kecuali \r dan \n
+}
 // Tokenizer
 function tokenizer(input) {
     const tokens = [];
@@ -690,7 +695,7 @@ function parseStatement(tokens){
         }
     }
 
-    //? 2nd pass: assignment
+    //? 2nd pass: DotTail
     //TODO: join al "MemberExpression" into "DotTail", maybe before binary
     for(current = 0; current < body.length; current++){
         function bodyNextis(type, i = 1) {
@@ -1020,6 +1025,7 @@ function code2ast(code){
 
 
 export {
+    hideComments,
     tokenizer,
     parser,
     transformer,
