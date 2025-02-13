@@ -444,6 +444,33 @@ function parser(tokens) {
             };
         }
 
+        if (token.type === 'keyword' && token.value === 'if') {
+            current++;
+            var node = {
+                type: 'IfExpression',
+                expect: walk(),
+                body: []
+            };
+            var later = walk()
+            if(later.type=='CodeDomain')
+                node.body = later.body;
+            else
+            // if (nextis('symbol')) {
+                node.body.push(later)
+            // }
+            return node
+        }
+
+        if (token.type === 'keyword' && token.value == 'return') {
+            // token = tokens[++current]
+            current++;
+            token = walk()
+            return {
+                type: 'Return',
+                value: token,
+            }; 
+        }
+
         if (token.value === '{' && token.type == 'symbol') {
             token = tokens[++current];
             // let prevToken = tokens[current - 2];
@@ -491,11 +518,13 @@ function parser(tokens) {
                 token = tokens[current];
             }
             //? check if this is paramerterlist
+            //TODO: this might wrong when in "if". eg: if (v < VCPU_VERSION || v > 65535)
             if (node.params.length >= 2 && node.params[1].type != 'comma') {
-                node = {
-                    type: 'Parameters',
-                    params: tokens2parameters(node.params)
-                }
+                // node = {
+                //     type: 'Parameters',
+                //     params: tokens2parameters(node.params)
+                // }
+                node.type = 'Parameters'
             }
 
             current++;
@@ -630,14 +659,14 @@ function parseStatement(tokens){
         //     }; 
         // }
 
-        if (token.type === 'Keyword' && token.name == 'return') {
-            token = tokens[++current]
-            current++;
-            return {
-                type: 'Return',
-                value: token,
-            }; 
-        }
+        // if (token.type === 'Keyword' && token.name == 'return') {
+        //     token = tokens[++current]
+        //     current++;
+        //     return {
+        //         type: 'Return',
+        //         value: token,
+        //     }; 
+        // }
 
         current++;
         return token
