@@ -24,7 +24,7 @@
         flex-direction: row;
     }
     body > div {
-        margin: 5px;
+        padding: 5px;
         max-width: 60ch;
         max-height: 100vh;
         display: flex;
@@ -43,6 +43,9 @@
         flex-shrink: 1;
         margin: 0;
     }
+    pre.half{
+      max-height: calc(50vh - 25px);
+    }
     pre#code {
       flex-shrink: 0;
     }
@@ -59,8 +62,8 @@
           <option value="/assets/skins/CornerAmp_Redux/scripts/corner">corner</option>
         </select>
       </h3>
-      <pre id="code"></pre>
-      <pre id="std"></pre>
+      <pre id="code" class="half"></pre>
+      <pre id="std" class="half"></pre>
     </div>
     <div><h3>Token</h3><pre id="token"></pre></div>
     <div><h3>AST </h3><pre id="parsed"></pre></div>
