@@ -332,6 +332,7 @@ function parser(tokens) {
                 
                 if (next() == '{') {                //? its a FuncDef
                     node.type = "FunctionDeclaration"
+                    params.params = tokens2parameters(params.params)
                     // debugger
                     if(ast.body.length && ast.body[ast.body.length-1].type == 'identifier'){
                         const theType = ast.body.pop()
