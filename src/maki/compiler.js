@@ -215,7 +215,7 @@ function parser(tokens) {
             if (token.name == 'ifdef' || token.name == 'ifndef') {
                 //? such as #ifndef __STD_MI is crucial, it may take|ignore whole file
                 // const block = [];
-                const start = current;
+                const start = ast.body.length;
                 while (!(tokens[current].type == 'macro' && tokens[current].name == 'endif')) {
                     // data.push(tokens[current]);
                     // block.push(walk());
@@ -223,7 +223,7 @@ function parser(tokens) {
                     // current++;
                 }
                 // debugger
-                const block = ast.body.splice(start, current - start)
+                const block = ast.body.splice(start, ast.body.length - start+1)
                 current++;
                 return {
                     // type: 'Ifdef',
