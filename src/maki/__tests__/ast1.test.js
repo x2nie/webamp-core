@@ -68,3 +68,57 @@ test('if', () => {
     })
 })
 
+
+test('if else', () => {
+    const ast = code2ast('if (now < 5000) return 0; else songInfoTimer.setDelay(250);');
+    expect(ast).toEqual([
+        {
+            "type": "IfExpression",
+            "expect": {
+                "type": "Parameters",
+                "params": [
+                    {
+                        "type": "identifier",
+                        "name": "now"
+                    },
+                    {
+                        "type": "symbol",
+                        "value": "<"
+                    },
+                    {
+                        "type": "NumberLiteral",
+                        "value": "5000"
+                    }
+                ]
+            },
+            "body": [
+                {
+                    "type": "Return",
+                    "value": {
+                        "type": "NumberLiteral",
+                        "value": "0"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Terminator",
+            "value": ";"
+        },
+        {
+            "type": "ElseExpression",
+            "body": [
+                {
+                    "type": "CallExpression",
+                    "name": "songInfoTimer.setDelay",
+                    "arguments": [
+                        {
+                            "type": "NumberLiteral",
+                            "value": "250"
+                        }
+                    ]
+                }
+            ]
+        }
+    ])
+})
