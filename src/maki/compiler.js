@@ -491,7 +491,7 @@ function parser(tokens) {
             // if (nextis('symbol')) {
                 node.body.push(later)
             // }
-            if(nextis('semi')) current++; //semi
+            // if(nextis('semi')) current++; //semi
             return node
         }
         if (token.type === 'keyword' && token.value === 'else') {
@@ -1161,7 +1161,7 @@ function code2ast(code){
     const tokens = tokenizer(code);
     const ast = parser(tokens.filter(tk => tk !=null & tk.type != 'comment'));
     // const ast2 = transformer(ast);
-    return ast
+    return ast.body
 }
 
 

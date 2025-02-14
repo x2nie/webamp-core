@@ -33,3 +33,38 @@ test('local var assignment', () => {
         }
     })
 })
+
+
+test('if', () => {
+    const ast = code2ast('if (now < 5000) return 0;');
+    expect(ast[0]).toEqual({
+        "type": "IfExpression",
+        "expect": {
+            "type": "Parameters",
+            "params": [
+                {
+                    "type": "identifier",
+                    "name": "now"
+                },
+                {
+                    "type": "symbol",
+                    "value": "<"
+                },
+                {
+                    "type": "NumberLiteral",
+                    "value": "5000"
+                }
+            ]
+        },
+        "body": [
+            {
+                "type": "Return",
+                "value": {
+                    "type": "NumberLiteral",
+                    "value": "0"
+                }
+            }
+        ]
+    })
+})
+
