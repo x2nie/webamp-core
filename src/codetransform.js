@@ -42,7 +42,7 @@ SongStop.onTimer(){
 
 `;
 
-const std_mi = `
+const std_mi0 = `
 //--------------------------------------------
 // std.mi
 //
@@ -218,6 +218,7 @@ Int versionCheck()
 
 #endif
 `;
+import std_mi from "./std_mi_566";
 
 const song_stopper_m = `
 #include <lib/std.mi>

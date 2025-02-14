@@ -227,8 +227,10 @@ function parser(tokens) {
                 current++;
                 return {
                     // type: 'Ifdef',
-                    // name: token.name,
-                    type: capitalizeFirstLetter(token.name),
+                    type: 'IfDefined',
+                    // type: capitalizeFirstLetter(token.name),
+                    ifdef: token.name.toLowerCase() == 'ifdef',
+                    name: token.name,
                     // data: token.data,
                     expect: token.data[0].value,
                     body: block
@@ -859,6 +861,7 @@ function traverser(ast, visitor) {
             // (Remember that `traverseArray` will in turn call `traverseNode` so  we
             // are causing the tree to be traversed recursively)
             case 'Program':
+            case 'IfDefined':
                 traverseArray(node.body, node);
                 break;
 
@@ -902,12 +905,14 @@ function transformer(ast) {
     let newAst = {
         type: 'Program',
         registry: [],
-        methods: [],
+        userfuncs: [],  //? user-functions. will be anonymous-function
+        methods: [],    //? api-functions; name is visible in maki
+        bindngs: [],
         variables: [],
         strings: [],
-        bindngs: [],
         body: [],
-        externals: [],
+        externals: [],  //? holds api-function extracted from *.mi files
+        procedures: [], //? byte code of function (userfunc + events)
         binary: [],
     };
 
@@ -922,6 +927,7 @@ function transformer(ast) {
     ast._context = newAst.body;
     ast._registry = newAst.registry;
     ast._methods = newAst.methods;
+    ast._userfuncs = newAst.userfuncs;
     ast._variables = newAst.variables;
     ast._bindngs = newAst.bindngs;
     ast._externals = newAst.externals;
@@ -934,15 +940,59 @@ function transformer(ast) {
                 node.binary.push('FG')
                 node.binary.push(3,4,23,0,0)
                 node._variables.push({
-                    global: true,
+                    isGlobal: true,
                     name: 'System',
+                    NAME: 'SYSTEM',
                     isObject: 1,
+                    predeclared: true, // https://en.wikipedia.org/wiki/Predeclared
+                    isUsed: 1,
                 });
                 node._variables.push({
-                    global: true,
+                    isGlobal: true,
                     name: 'NULL',
+                    NAME: 'NULL',
                     isObject: 0,
+                    isUsed: 1,
                 });
+            },
+        },
+
+        IfDefined: {
+            enter(node, parent) {
+                const name = node.expect
+                const exists = ast._variables.find(v => v.name == name)
+                if(node.ifdef && !exists){
+                    node.body = []
+                }
+                if(!node.ifdef && exists){
+                    node.body = []
+                }
+            }
+        },
+        Define: {
+            enter(node, parent) {
+                ast._variables.push({
+                    name: node.name,
+                    isGlobal: true,
+                    isObject: 0,
+                    value: node.value,
+                    // type: node.type
+                    isUsed: false, //? not yet, set true by opcode/assembler
+                });
+            }
+        },
+
+        GlobalDeclaration: {
+            enter(node, parent) {
+                node.declarations.forEach(d =>{
+                    ast._variables.push({
+                        isGlobal: true,
+                        type: node.varType,
+                        name: d.value,
+                        NAME: d.value.toUpperCase(),
+                        isUsed: true, //? signal for global = always included in .maki
+                    });
+                })
             },
         },
 
@@ -971,9 +1021,11 @@ function transformer(ast) {
 
         ClassRegistry: {
             enter(node, parent) {
-                parent._registry.push({
+                const alias= node.data[node.data.length -1].name;
+                ast._registry.push({
                     key: node.data[0].value,
-                    alias: node.data[node.data.length -1].name
+                    alias,
+                    ALIAS: alias.toUpperCase(),
                 });
             },
         },
@@ -983,51 +1035,71 @@ function transformer(ast) {
                 // node.pop('type')
                 const {type, name, ...method} = node
                 const [className, methodName] = name.split('.')
-            parent._externals.push({className, methodName, NAME: methodName.toUpperCase(), ...method});
+            ast._externals.push({className, methodName, NAME: methodName.toUpperCase(), ...method});
+            },
+        },
+
+        UserFunction_h: {
+            enter(node, parent) {
+                //? used later to detect wheter a funcDec is uf or not.
+                ast._userfuncs.push({
+                    name:node.name, 
+                    NAME: node.name.toUpperCase() 
+                });
             },
         },
 
         FunctionDeclaration: {
             enter(node, parent) {
-                const [className, methodName] = node.name.split('.')
-                if(!methodName) return; //* ignore Custom Function
-                let obj = parent._registry.find(cls => cls.alias == className)
-                const variable = parent._variables.find(v => v.name == className)
-                // debugger
-                const variableIndex = parent._variables.indexOf(variable)
-                if(obj == null){
-                    obj = parent._registry.find(cls => cls.alias == variable.type)
-                }
-                let classIndex = parent._registry.indexOf(obj)
-                //? method
-                parent._methods.push({
-                    classIndex,
-                    string: methodName,
-                });
+                let uf = null;
+                let [className, methodName] = node.name.split('.')
+                if(!methodName) {
+                    //? possibly Custom Function
+                    methodName = node.name
+                    let PROCNAME = methodName.toUpperCase()
+                    uf = ast._userfuncs.find(proc => proc.NAME == PROCNAME)
+                    if(uf){
+                        //? correct method.name
+                        methodName = uf.name
+                    } 
+                    //? possibly binding 
+                    else {
+                        className = 'System'
+                    }
+                } 
 
-                //let say commands has been generated
-                //? binding
-                parent._bindngs.push({
-                    variableIndex,
-                    methodIndex: parent._methods.length -1,
-                    binaryOffset: -1,
-                    className, methodName, 
-                    // classIndex,
-                });
-            },
-        },
-
-        GlobalDeclaration: {
-            enter(node, parent) {
-                node.declarations.forEach(d =>{
-                    parent._variables.push({
-                        global: true,
-                        type: node.varType,
-                        name: d.value,
+                if(!uf){
+                    //? non user-function, has to register
+                    const CLASSNAME = className.toUpperCase()
+                    let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
+                    const variable = ast._variables.find(v => v.NAME == CLASSNAME)
+                    // debugger
+                    const variableIndex = ast._variables.indexOf(variable)
+                    if(obj == null){
+                        obj = ast._registry.find(cls => cls.alias == variable.type)
+                    }
+                    let classIndex = ast._registry.indexOf(obj)
+                    //? method
+                    ast._methods.push({
+                        classIndex,
+                        string: methodName,
                     });
-                })
+                    
+                    //let say commands has been generated
+                    //? binding
+                    ast._bindngs.push({
+                        variableIndex,
+                        methodIndex: ast._methods.length -1,
+                        binaryOffset: -1,
+                        className, methodName, 
+                        // classIndex,
+                    });
+                }
+
+                //TODO: Assembler here
             },
         },
+
 
         // Next up, `CallExpression`.
         CallExpression: {
@@ -1064,7 +1136,7 @@ function transformer(ast) {
 
                 // Last, we push our (possibly wrapped) `CallExpression` to the `parent`'s
                 // `context`.
-                parent._context.push(expression);
+                ast._context.push(expression);
             },
         }
     });
