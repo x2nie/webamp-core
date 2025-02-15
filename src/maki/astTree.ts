@@ -1,4 +1,4 @@
-type ASTNode =
+export type ASTNode =
   | { type: "IfExpression"; expect: ASTNode; body: ASTNode[] }
   | { type: "BinaryExpr"; operator: string; left: ASTNode; right: ASTNode }
   | { type: "UnaryExpr"; operator: string; expr: ASTNode }

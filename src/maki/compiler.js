@@ -1,4 +1,5 @@
 import { buildExpressionTree } from "./astTree";
+import { generateIR } from "./ir";
 
 function hideComments(code) {
     //? replace anything inside comments with space, but preserve new line
@@ -560,7 +561,7 @@ function parser(tokens) {
                 // name: prevToken.value,
                 body: []
             };
-            const COMPLETE_STATEMENT = ['semi', 'IfExpression', 'ElseExpression', 'ForExpression', 'CodeDomain']
+            const COMPLETE_STATEMENT = ['semi','Terminator', "ExpressionStatement", 'IfExpression', 'ElseExpression', 'ForExpression', 'CodeDomain']
             while (token && !(token.value == '}' && token.type == 'symbol')) {
                 // node.body.push(walk());
                 token = tokens[current];
@@ -573,11 +574,17 @@ function parser(tokens) {
                     // if(!token) debugger;
                 }
                 console.log('found a statement:', body)
-                const statement = {
-                    type: 'ExpressionStatement',
-                    body: parseStatement(body.filter(token => token != null)),
-                }
-                node.body.push(statement)
+                // const statement = {
+                //     type: 'ExpressionStatement',
+                //     body: parseStatement(body.filter(token => token != null)),
+                // }
+                const statements = parseStatement(body.filter(token => token != null))
+                statements.forEach(statement => node.body.push(statement))
+                // if(statements.length > 1){
+                //     debugger
+                // } else {
+                //     node.body.push(statement)
+                // }
                 if(!(token.value == '}' && token.type == 'symbol')){
                     token = tokens[++current];
                 }
@@ -836,6 +843,9 @@ function traverser(ast, visitor) {
     // A `traverseArray` function that will allow us to iterate over an array and
     // call the next function that we will define: `traverseNode`.
     function traverseArray(array, parent) {
+        if(!Array.isArray(array)){
+            debugger
+        }
         array.forEach(child => {
             traverseNode(child, parent);
         });
@@ -866,12 +876,17 @@ function traverser(ast, visitor) {
             // are causing the tree to be traversed recursively)
             case 'Program':
             case 'IfDefined':
+            case 'ExpressionStatement':
+                traverseArray(node.body, node);
+                break;
+
+            case 'FunctionDeclaration':
                 traverseArray(node.body, node);
                 break;
 
             // Next we do the same with `CallExpression` and traverse their `params`.
             case 'CallExpression':
-                traverseArray(node.params, node);
+                traverseArray(node.arguments, node);
                 break;
 
             // In the cases of `NumberLiteral` and `StringLiteral` we don't have any
@@ -1104,6 +1119,13 @@ function transformer(ast) {
 
                 //TODO: Assembler here
             },
+        },
+
+        IfExpression: {
+            enter(node, parent) {
+                const ir = generateIR(node.expect)
+                console.warn('if:', ir)
+            }
         },
 
 
