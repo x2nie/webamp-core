@@ -901,7 +901,7 @@ function traverser(ast, visitor) {
 
             // Next we do the same with `CallExpression` and traverse their `params`.
             case 'CallExpression':
-                traverseArray(node.arguments, node);
+                traverseBackArray(node.arguments, node);
                 break;
 
             // In the cases of `NumberLiteral` and `StringLiteral` we don't have any
@@ -1029,6 +1029,18 @@ function transformer(ast) {
         return theVar
     }
 
+    function getMethod(methodName, className) {
+        const METHODNAME = methodName.toUpperCase()
+        let method = ast._methods.find(m => m.NAME == METHODNAME)
+        if(!method){
+            method = ast._externals.find(m => m.NAME == METHODNAME)
+            if(method){
+                method.offset = ast._methods.length
+                ast._methods.push(method)
+            }
+        }
+        return method
+    }
     // We'll start by calling the traverser function with our ast and a visitor.
     traverser(ast, {
 
@@ -1156,6 +1168,7 @@ function transformer(ast) {
         // Next we have `StringLiteral`
         StringLiteral: {
             enter(node, parent) {
+                debugger
                 // parent._context.push({
                 //     type: 'StringLiteral',
                 //     value: node.value,
@@ -1323,6 +1336,9 @@ function transformer(ast) {
                         className = 'System'
                     }
                 } 
+                node.className = className
+                node.methodName = methodName
+                node.uf = uf!=null;
 
                 if(!uf){
                     //? non user-function, find class.varOffset
@@ -1337,12 +1353,26 @@ function transformer(ast) {
                     // const variableIndex = ast._variables.indexOf(variable)
                     let variable = getVariable(className)
                     if(!variable || variable.offset==null){
-                        //TODO: ast._variables.push()
+                        //TO DO: ast._variables.push()
                         debugger
                         // variable =
                     }
                     theFun.ir.push(`PUSH  ${variable.offset} CALL.INSTANCE`)  //? the instance
-                    theFun.ir.push(`APICALL  ${methodName} `)  //? the instance
+                    
+                }
+            },
+
+            exit(node, parent){
+
+                if(!node.uf){
+                    const {methodName, className} = node
+                    let method = getMethod(methodName, className)
+                    if(!method || method.offset==null){
+                        //TODO: ast._methods.push()
+                        debugger
+                        // variable =
+                    }
+                    theFun.ir.push(`APICALL ${method.offset}  ${methodName} `)  //? the instance
                     
                     // let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
                     // if(obj == null){
