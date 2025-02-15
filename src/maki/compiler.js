@@ -256,8 +256,8 @@ function parser(tokens) {
             current++;
             token = tokens[current++];
             return {
-                type: 'macro',
-                name: token.value,
+                type: 'Predecl',
+                name: `.${token.value}`,
             }
         }
 
@@ -934,14 +934,14 @@ function transformer(ast) {
     // node.
     let newAst = {
         type: 'Program',
-        registry: [],
         userfuncs: [],  //? user-functions. will be anonymous-function
         procedures: [], //? byte code of function (userfunc + events)
         methods: [],    //? api-functions; name is visible in maki
         bindngs: [],
-        defined: [],    //? temporary variables, used by compiler
         strings: [],    //? string for default value
+        registry: [],
         variables: [],  //? final varaibles, used by VM
+        defined: [],    //? temporary variables, used by compiler
         body: [],
         externals: [],  //? holds api-function extracted from *.mi files
         binary: [],
@@ -967,6 +967,38 @@ function transformer(ast) {
 
     let theFun = null; // current proc
 
+    const irSolver = (node) => {
+        let offset;
+
+        switch (node.type) {
+            case 'identifier':
+            case 'LocalVar':
+            case 'NumberLiteral':
+                if(node.name in theFun.vars){
+                    offset = theFun.vars[node.name].offset
+                } else {
+                    theFun.vars[node.name] = node;
+                    ast._variables.push({
+                        name: node.name,
+                        node: node,
+                    })
+                    offset = ast._variables.length -1;
+                    node.offset = offset
+                }
+                return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
+                break;
+
+            case 'CallExpression':
+                break;
+
+            case '*':
+                break;
+
+            default:
+                break;
+        }
+    }
+
     // We'll start by calling the traverser function with our ast and a visitor.
     traverser(ast, {
 
@@ -974,21 +1006,35 @@ function transformer(ast) {
             enter(node, parent) {
                 node.binary.push('FG')
                 node.binary.push(3,4,23,0,0)
-                node._variables.push({
-                    isGlobal: true,
-                    name: 'System',
-                    NAME: 'SYSTEM',
-                    isObject: 1,
-                    predeclared: true, // https://en.wikipedia.org/wiki/Predeclared
-                    isUsed: 1,
-                });
-                node._variables.push({
-                    isGlobal: true,
-                    name: 'NULL',
-                    NAME: 'NULL',
-                    isObject: 0,
-                    isUsed: 1,
-                });
+            },
+        },
+
+        Predecl: {
+            enter(node, parent) {
+                if(node.name == '.CODE'){
+                    ast._variables.push({
+                        isGlobal: true,
+                        name: 'System',
+                        NAME: 'SYSTEM',
+                        isObject: 1,
+                        predeclared: true, // https://en.wikipedia.org/wiki/Predeclared
+                        isUsed: 1,
+                    });
+                    ast._variables.push({
+                        isGlobal: true,
+                        name: 'NULL',
+                        NAME: 'NULL',
+                        isObject: 0,
+                        isUsed: 1,
+                    });
+                    ast._variables.push({
+                        isGlobal: true,
+                        name: '__deprecated_runtime',
+                        NAME: '__DEPRECATED_RUNTIME',
+                        isObject: 0,
+                        isUsed: 1,
+                    });
+                }
             },
         },
 
@@ -1121,21 +1167,22 @@ function transformer(ast) {
                     });
                     
                     //let say commands has been generated
-                    //? binding
-                    ast._bindngs.push({
-                        variableIndex,
-                        methodIndex: ast._methods.length -1,
-                        binaryOffset: -1,
-                        className, methodName, 
-                        // classIndex,
-                    });
+                    // //? binding
+                    // ast._bindngs.push({
+                    //     variableIndex,
+                    //     methodIndex: ast._methods.length -1,
+                    //     binaryOffset: -1,
+                    //     className, methodName, 
+                    //     // classIndex,
+                    // });
                 }
+                node.uf = uf !== undefined
 
                 //? set container of bytecodes
                 const fun = {
                     name: node.name,
-                    vars: {},
                     ir: [],
+                    vars: {},
                 }
                 
                 //? register by first visible in program
@@ -1149,6 +1196,16 @@ function transformer(ast) {
 
 
             exit(node, parent) {
+                if(!node.uf){
+                    //? binding. set it after assembler, as shown in usual maki's methods order
+                    ast._bindngs.push({
+                        variableIndex,
+                        methodIndex: ast._methods.length -1,
+                        binaryOffset: -1,
+                        className, methodName, 
+                        // classIndex,
+                    });
+                }
                 theFun = null;
             }
         },
@@ -1157,7 +1214,7 @@ function transformer(ast) {
             enter(node, parent) {
                 // debugger
                 console.log('if:', node.expect)
-                const ir = generateIR(node.expect)
+                const ir = generateIR(node.expect, irSolver)
                 theFun.ir.push(...ir)
                 // console.warn('if:', ir)
             }
