@@ -894,6 +894,11 @@ function traverser(ast, visitor) {
                 traverseArray(node.body, node);
                 break;
 
+            case 'Assignment':
+                traverseNode(node.left, node);
+                traverseNode(node.right, node);
+                break;
+
             // Next we do the same with `CallExpression` and traverse their `params`.
             case 'CallExpression':
                 traverseArray(node.arguments, node);
@@ -999,6 +1004,31 @@ function transformer(ast) {
         }
     }
 
+    function setVariable(variable){
+        const node ={
+            ...variable,
+            variable: node.varType || variable.type,
+            NAME: variable.name.toUpperCase(),
+            isUsed: true,
+        }
+        ast._variables.push(node)
+        offset = ast._variables.length -1;
+        node.offset = offset
+    }
+
+    function getVariable(varName) {
+        let theVar = theFun.vars[varName]
+        if(!theVar){
+            theVar = ast._variables.find(v => v.NAME == varName.toUpperCase())
+            // theVar && setVariable(theVar)
+        }
+        if(!theVar){
+            theVar = ast._registry.find(cls => cls.ALIAS == varName.toUpperCase())
+            theVar && setVariable(theVar)
+        }
+        return theVar
+    }
+
     // We'll start by calling the traverser function with our ast and a visitor.
     traverser(ast, {
 
@@ -1078,6 +1108,30 @@ function transformer(ast) {
         },
 
         // The first visitor method accepts any `NumberLiteral`
+        LocalVar: {
+            // We'll visit them on enter.
+            enter(node, parent) {
+                let offset
+                if(node.name in theFun.vars){
+                    offset = theFun.vars[node.name].offset
+                } else {
+                    theFun.vars[node.name] = node;
+                    ast._variables.push({
+                        ...node,
+                        // name: node.name,
+                        NAME: node.name.toUpperCase(),
+                        // node: node,
+                        type: node.varType || node.type,
+                        isUsed: true,
+                    })
+                    offset = ast._variables.length -1;
+                    node.offset = offset
+                }
+                // return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
+                theFun.ir.push(`PUSH ${offset} LOCALVAR`)
+            },
+        },
+
         NumberLiteral: {
             // We'll visit them on enter.
             enter(node, parent) {
@@ -1232,39 +1286,103 @@ function transformer(ast) {
             }
         },
 
+        Assignment: {
+            exit(node, parent) {
+                theFun.ir.push(`MOV _ ${node.operator}`)
+            }
+        },
+
 
         // Next up, `CallExpression`.
         CallExpression: {
+            //? IR = class.varOffset, ...paramN.varOffset, APICALL|CALL, method.offset
             enter(node, parent) {
+                let uf = null;
+                let [className, methodName] = node.name.split('.')
+                if(!methodName) {
+                    //? possibly Custom Function
+                    methodName = node.name
+                    let PROCNAME = methodName.toUpperCase()
+                    uf = ast._userfuncs.find(proc => proc.NAME == PROCNAME)
+                    if(uf){
+                        //? correct method.name
+                        methodName = uf.name
+                    } 
+                    //? possibly binding 
+                    else {
+                        className = 'System'
+                    }
+                } 
 
-                // We start creating a new node `CallExpression` with a nested
-                // `Identifier`.
-                let expression = {
-                    type: 'CallExpression',
-                    callee: {
-                        type: 'Identifier',
-                        name: node.name,
-                    },
-                    arguments: [],
-                };
-
-                // Next we're going to define a new context on the original
-                // `CallExpression` node that will reference the `expression`'s arguments
-                // so that we can push arguments.
-                node._context = expression.arguments;
-
-                // Then we're going to check if the parent node is a `CallExpression`.
-                // If it is not...
-                if (parent.type !== 'CallExpression') {
-
-                    // We're going to wrap our `CallExpression` node with an
-                    // `ExpressionStatement`. We do this because the top level
-                    // `CallExpression` in JavaScript are actually statements.
-                    expression = {
-                        type: 'ExpressionStatement',
-                        expression: expression,
-                    };
+                if(!uf){
+                    //? non user-function, find class.varOffset
+                    const CLASSNAME = className.toUpperCase()
+                    let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
+                    // let variable = ast._variables.find(v => v.NAME == CLASSNAME)
+                    // if(!variable){
+                    //     //TODO: ast._variables.push()
+                    //     debugger
+                    //     // variable =
+                    // }
+                    // // debugger
+                    // const variableIndex = ast._variables.indexOf(variable)
+                    let variable = getVariable(className)
+                    if(!variable){
+                        //TODO: ast._variables.push()
+                        debugger
+                        // variable =
+                    }
+                    theFun.ir.push(`PUSH  ${variable.offset} CALL.INSTANCE`)  //? the instance
+                    
+                    if(obj == null){
+                        obj = ast._registry.find(cls => cls.alias == variable.type)
+                    }
+                    let classIndex = ast._registry.indexOf(obj)
+                    //? method
+                    ast._methods.push({
+                        classIndex,
+                        string: methodName,
+                    });
+                    
+                    //let say commands has been generated
+                    // //? binding
+                    // ast._bindngs.push({
+                    //     variableIndex,
+                    //     methodIndex: ast._methods.length -1,
+                    //     binaryOffset: -1,
+                    //     className, methodName, 
+                    //     // classIndex,
+                    // });
                 }
+
+                // // We start creating a new node `CallExpression` with a nested
+                // // `Identifier`.
+                // let expression = {
+                //     type: 'CallExpression',
+                //     callee: {
+                //         type: 'Identifier',
+                //         name: node.name,
+                //     },
+                //     arguments: [],
+                // };
+
+                // // Next we're going to define a new context on the original
+                // // `CallExpression` node that will reference the `expression`'s arguments
+                // // so that we can push arguments.
+                // node._context = expression.arguments;
+
+                // // Then we're going to check if the parent node is a `CallExpression`.
+                // // If it is not...
+                // if (parent.type !== 'CallExpression') {
+
+                //     // We're going to wrap our `CallExpression` node with an
+                //     // `ExpressionStatement`. We do this because the top level
+                //     // `CallExpression` in JavaScript are actually statements.
+                //     expression = {
+                //         type: 'ExpressionStatement',
+                //         expression: expression,
+                //     };
+                // }
 
                 // Last, we push our (possibly wrapped) `CallExpression` to the `parent`'s
                 // `context`.
