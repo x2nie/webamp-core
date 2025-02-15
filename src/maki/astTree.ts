@@ -1,3 +1,15 @@
+/*
+| Operator		|	Simbol			|	Prioritas       |
+| Grouping		|	()	    		|   1 (Tertinggi)   |
+| Unary	  		|	-x, !x			|	2   |
+| Multiply		|	*, /, %			|	3   |
+| Adiktif		|	+, -			|	4   |
+| Relasional	|	<, <=, >, >=	|	5   |
+| Kesetaraan	|	==, !=			|	6   |
+| Logika AND  	| 	&&				|	7   |
+| Logika OR  	| 	||              |	    |
+*/
+
 export type ASTNode =
     | { type: "IfExpression"; expect: ASTNode; body: ASTNode[] }
     | { type: "BinaryExpr"; operator: string; left: ASTNode; right: ASTNode }
