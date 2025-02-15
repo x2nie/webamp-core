@@ -573,7 +573,7 @@ function parser(tokens) {
                     token = tokens[current];
                     // if(!token) debugger;
                 }
-                console.log('found a statement:', body)
+                // console.log('found a statement:', body)
                 // const statement = {
                 //     type: 'ExpressionStatement',
                 //     body: parseStatement(body.filter(token => token != null)),
@@ -909,9 +909,9 @@ function traverser(ast, visitor) {
 
             // And again, if we haven't recognized the node type then we'll throw an
             // error.
-            default:
-                // throw new TypeError(node.type);
-                console.log('untransformed',node.type, node)
+            // default:
+            //     // throw new TypeError(node.type);
+            //     console.log('untransformed',node.type, node)
         }
 
         // If there is an `exit` method for this node type we'll call it with the
@@ -1037,20 +1037,20 @@ function transformer(ast) {
             enter(node, parent) {
                 // We'll create a new node also named `NumberLiteral` that we will push to
                 // the parent context.
-                parent._context.push({
-                    type: 'NumberLiteral',
-                    value: node.value,
-                });
+                // parent._context.push({
+                //     type: 'NumberLiteral',
+                //     value: node.value,
+                // });
             },
         },
 
         // Next we have `StringLiteral`
         StringLiteral: {
             enter(node, parent) {
-                parent._context.push({
-                    type: 'StringLiteral',
-                    value: node.value,
-                });
+                // parent._context.push({
+                //     type: 'StringLiteral',
+                //     value: node.value,
+                // });
             },
         },
 
@@ -1156,6 +1156,7 @@ function transformer(ast) {
         IfExpression: {
             enter(node, parent) {
                 // debugger
+                console.log('if:', node.expect)
                 const ir = generateIR(node.expect)
                 theFun.ir.push(...ir)
                 // console.warn('if:', ir)
