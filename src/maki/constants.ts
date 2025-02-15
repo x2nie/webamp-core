@@ -12,11 +12,11 @@ export const COMMANDS = {
     // is always at the start of a function
   },
   8: { name: "eq", short: "==", in: "2", out: "1" },
-  9: { name: "heq", short: "!=", in: "2", out: "1" },
+  9: { name: "neq", short: "!=", in: "2", out: "1" },
   10: { name: "gt", short: ">", in: "2", out: "1" },
-  11: { name: "gtq", short: ">=", in: "2", out: "1" },
-  12: { name: "le", short: "<", in: "2", out: "1" },
-  13: { name: "leq", short: "<=", in: "2", out: "1" },
+  11: { name: "gte", short: ">=", in: "2", out: "1" },
+  12: { name: "lt", short: "<", in: "2", out: "1" },
+  13: { name: "lte", short: "<=", in: "2", out: "1" },
 
   16: { name: "jumpIf", short: "if", arg: "line", in: "1", out: "0" },
   17: { name: "jumpIfNot", arg: "line", in: "1", out: "0" },

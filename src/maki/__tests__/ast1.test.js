@@ -18,11 +18,11 @@ test('simple assignment', () => {
 })
 
 test('local var assignment', () => {
-    const statement = code2statement('int __deprecated_runtime = 1;');
+    const statement = code2statement('int i = 1;');
     expect(statement[0]).toEqual({
         "type": "Assignment",
         "left": {
-            "name": "__deprecated_runtime",
+            "name": "i",
             "type": "LocalVar",
             "varType": "int",
         },

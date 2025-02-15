@@ -422,9 +422,13 @@ class MakiParser {
             break;
           case PRIMITIVE_TYPES[3]:
           case PRIMITIVE_TYPES[4]:
-            const exponent = (uinit2 & 0xff80) >> 7;
-            const mantisse = ((0x80 | (uinit2 & 0x7f)) << 16) | uinit1;
-            value = mantisse * 2.0 ** (exponent - 0x96);
+            if(uinit1==0 && uinit2==0){
+              value = 0
+            } else {
+              const exponent = (uinit2 & 0xff80) >> 7;
+              const mantisse = ((0x80 | (uinit2 & 0x7f)) << 16) | uinit1;
+              value = mantisse * 2.0 ** (exponent - 0x96);
+            }
             break;
           case PRIMITIVE_TYPES[6]:
             // This will likely get set by constants later on.

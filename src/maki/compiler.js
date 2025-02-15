@@ -1,3 +1,5 @@
+import { buildExpressionTree } from "./astTree";
+
 function hideComments(code) {
     //? replace anything inside comments with space, but preserve new line
     return code
@@ -478,9 +480,11 @@ function parser(tokens) {
 
         if (token.type === 'keyword' && token.value === 'if') {
             current++;
+            const truthy = walk()
             var node = {
                 type: 'IfExpression',
-                expect: walk(),
+                // expect: walk(),
+                expect: buildExpressionTree(truthy.params),
                 body: [],
                 // 'else': null,
             };
@@ -908,8 +912,9 @@ function transformer(ast) {
         userfuncs: [],  //? user-functions. will be anonymous-function
         methods: [],    //? api-functions; name is visible in maki
         bindngs: [],
-        variables: [],
-        strings: [],
+        defined: [],    //? temporary variables, used by compiler
+        strings: [],    //? string for default value
+        variables: [],  //? final varaibles, used by VM
         body: [],
         externals: [],  //? holds api-function extracted from *.mi files
         procedures: [], //? byte code of function (userfunc + events)
@@ -928,6 +933,7 @@ function transformer(ast) {
     ast._registry = newAst.registry;
     ast._methods = newAst.methods;
     ast._userfuncs = newAst.userfuncs;
+    ast._defined = newAst.defined;
     ast._variables = newAst.variables;
     ast._bindngs = newAst.bindngs;
     ast._externals = newAst.externals;
@@ -960,7 +966,7 @@ function transformer(ast) {
         IfDefined: {
             enter(node, parent) {
                 const name = node.expect
-                const exists = ast._variables.find(v => v.name == name)
+                const exists = ast._defined.find(v => v.name == name)
                 if(node.ifdef && !exists){
                     node.body = []
                 }
@@ -971,7 +977,7 @@ function transformer(ast) {
         },
         Define: {
             enter(node, parent) {
-                ast._variables.push({
+                ast._defined.push({
                     name: node.name,
                     isGlobal: true,
                     isObject: 0,
@@ -1145,6 +1151,7 @@ function transformer(ast) {
     // just created.
     return newAst;
 }
+
 
 function capitalizeFirstLetter(val) {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
