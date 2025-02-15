@@ -1298,6 +1298,7 @@ function transformer(ast) {
         Assignment: {
             exit(node, parent) {
                 theFun.ir.push(`MOV _ ${node.operator}`)
+                theFun.ir.push(`POP`)
             }
         },
 
@@ -1325,7 +1326,7 @@ function transformer(ast) {
 
                 if(!uf){
                     //? non user-function, find class.varOffset
-                    const CLASSNAME = className.toUpperCase()
+                    // const CLASSNAME = className.toUpperCase()
                     // let variable = ast._variables.find(v => v.NAME == CLASSNAME)
                     // if(!variable){
                     //     TO DO: ast._variables.push()
@@ -1341,6 +1342,7 @@ function transformer(ast) {
                         // variable =
                     }
                     theFun.ir.push(`PUSH  ${variable.offset} CALL.INSTANCE`)  //? the instance
+                    theFun.ir.push(`APICALL  ${methodName} `)  //? the instance
                     
                     // let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
                     // if(obj == null){
