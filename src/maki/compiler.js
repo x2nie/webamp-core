@@ -1007,13 +1007,13 @@ function transformer(ast) {
     function setVariable(variable){
         const node ={
             ...variable,
-            variable: node.varType || variable.type,
+            type: variable.varType || variable.type,
             NAME: variable.name.toUpperCase(),
             isUsed: true,
+            offset:  ast._variables.length,
         }
         ast._variables.push(node)
-        offset = ast._variables.length -1;
-        node.offset = offset
+        // node.offset = ast._variables.length -1;
     }
 
     function getVariable(varName) {
@@ -1049,6 +1049,7 @@ function transformer(ast) {
                         isObject: 1,
                         predeclared: true, // https://en.wikipedia.org/wiki/Predeclared
                         isUsed: 1,
+                        offset: 0,
                     });
                     ast._variables.push({
                         isGlobal: true,
@@ -1056,6 +1057,7 @@ function transformer(ast) {
                         NAME: 'NULL',
                         isObject: 0,
                         isUsed: 1,
+                        offset: 1,
                     });
                     ast._variables.push({
                         isGlobal: true,
@@ -1063,6 +1065,7 @@ function transformer(ast) {
                         NAME: '__DEPRECATED_RUNTIME',
                         isObject: 0,
                         isUsed: 1,
+                        offset: 2,
                     });
                 }
             },
@@ -1096,13 +1099,19 @@ function transformer(ast) {
         GlobalDeclaration: {
             enter(node, parent) {
                 node.declarations.forEach(d =>{
-                    ast._variables.push({
-                        isGlobal: true,
-                        type: node.varType,
+                    setVariable({
+                        ...node,
                         name: d.value,
-                        NAME: d.value.toUpperCase(),
+                        isGlobal: true,
                         isUsed: true, //? signal for global = always included in .maki
-                    });
+                    })
+                    // ast._variables.push({
+                    //     isGlobal: true,
+                    //     type: node.varType,
+                    //     name: d.value,
+                    //     NAME: d.value.toUpperCase(),
+                    //     isUsed: true, //? signal for global = always included in .maki
+                    // });
                 })
             },
         },
@@ -1317,32 +1326,32 @@ function transformer(ast) {
                 if(!uf){
                     //? non user-function, find class.varOffset
                     const CLASSNAME = className.toUpperCase()
-                    let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
                     // let variable = ast._variables.find(v => v.NAME == CLASSNAME)
                     // if(!variable){
-                    //     //TODO: ast._variables.push()
+                    //     TO DO: ast._variables.push()
                     //     debugger
                     //     // variable =
                     // }
                     // // debugger
                     // const variableIndex = ast._variables.indexOf(variable)
                     let variable = getVariable(className)
-                    if(!variable){
+                    if(!variable || variable.offset==null){
                         //TODO: ast._variables.push()
                         debugger
                         // variable =
                     }
                     theFun.ir.push(`PUSH  ${variable.offset} CALL.INSTANCE`)  //? the instance
                     
-                    if(obj == null){
-                        obj = ast._registry.find(cls => cls.alias == variable.type)
-                    }
-                    let classIndex = ast._registry.indexOf(obj)
-                    //? method
-                    ast._methods.push({
-                        classIndex,
-                        string: methodName,
-                    });
+                    // let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
+                    // if(obj == null){
+                    //     obj = ast._registry.find(cls => cls.alias == variable.type)
+                    // }
+                    // let classIndex = ast._registry.indexOf(obj)
+                    // //? method
+                    // ast._methods.push({
+                    //     classIndex,
+                    //     string: methodName,
+                    // });
                     
                     //let say commands has been generated
                     // //? binding
