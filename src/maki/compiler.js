@@ -851,6 +851,13 @@ function traverser(ast, visitor) {
         });
     }
 
+    function traverseBackArray(array, parent) {
+        //? 
+        array.slice().reverse().forEach(child => {
+            traverseNode(child, parent);
+        });
+    }
+
     // `traverseNode` will accept a `node` and its `parent` node. So that it can
     // pass both to our visitor methods.
     function traverseNode(node, parent) {
@@ -877,10 +884,13 @@ function traverser(ast, visitor) {
             case 'Program':
             case 'IfDefined':
             case 'ExpressionStatement':
+            case 'IfExpression':
+            case 'ElseExpression':
                 traverseArray(node.body, node);
                 break;
 
             case 'FunctionDeclaration':
+                traverseBackArray(node.parameters, node);
                 traverseArray(node.body, node);
                 break;
 
@@ -893,6 +903,7 @@ function traverser(ast, visitor) {
             // child nodes to visit, so we'll just break.
             case 'NumberLiteral':
             case 'StringLiteral':
+            case 'Parameter':
             case 'macro':
                 break;
 
@@ -925,6 +936,7 @@ function transformer(ast) {
         type: 'Program',
         registry: [],
         userfuncs: [],  //? user-functions. will be anonymous-function
+        procedures: [], //? byte code of function (userfunc + events)
         methods: [],    //? api-functions; name is visible in maki
         bindngs: [],
         defined: [],    //? temporary variables, used by compiler
@@ -932,7 +944,6 @@ function transformer(ast) {
         variables: [],  //? final varaibles, used by VM
         body: [],
         externals: [],  //? holds api-function extracted from *.mi files
-        procedures: [], //? byte code of function (userfunc + events)
         binary: [],
     };
 
@@ -952,6 +963,9 @@ function transformer(ast) {
     ast._variables = newAst.variables;
     ast._bindngs = newAst.bindngs;
     ast._externals = newAst.externals;
+    ast._procedures = newAst.procedures;
+
+    let theFun = null; // current proc
 
     // We'll start by calling the traverser function with our ast and a visitor.
     traverser(ast, {
@@ -1117,14 +1131,46 @@ function transformer(ast) {
                     });
                 }
 
+                //? set container of bytecodes
+                const fun = {
+                    name: node.name,
+                    vars: {},
+                    ir: [],
+                }
+                
+                //? register by first visible in program
+                ast._procedures.push(fun);   
+
+                //? global 
+                theFun = fun
+
                 //TODO: Assembler here
             },
+
+
+            exit(node, parent) {
+                theFun = null;
+            }
         },
 
         IfExpression: {
             enter(node, parent) {
+                // debugger
                 const ir = generateIR(node.expect)
-                console.warn('if:', ir)
+                theFun.ir.push(...ir)
+                // console.warn('if:', ir)
+            }
+        },
+
+        Parameter: {
+            enter(node, parent) {
+                theFun.ir.push(`POPTO ${node.name}`)
+            }
+        },
+
+        Return: {
+            enter(node, parent) {
+                theFun.ir.push(`RET ${node.value.value}`)
             }
         },
 
@@ -1164,7 +1210,7 @@ function transformer(ast) {
 
                 // Last, we push our (possibly wrapped) `CallExpression` to the `parent`'s
                 // `context`.
-                ast._context.push(expression);
+                // ast._context.push(expression);
             },
         }
     });
