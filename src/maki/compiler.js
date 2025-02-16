@@ -884,8 +884,13 @@ function traverser(ast, visitor) {
             case 'Program':
             case 'IfDefined':
             case 'ExpressionStatement':
-            case 'IfExpression':
             case 'ElseExpression':
+                traverseArray(node.body, node);
+                break;
+
+            case 'IfExpression':
+                traverseNode(node.expect, node);
+                methods.neck(node, parent); //? JUMPIF
                 traverseArray(node.body, node);
                 break;
 
@@ -894,6 +899,7 @@ function traverser(ast, visitor) {
                 traverseArray(node.body, node);
                 break;
 
+            case 'BinaryExpr':
             case 'Assignment':
                 traverseNode(node.left, node);
                 traverseNode(node.right, node);
@@ -972,6 +978,7 @@ function transformer(ast) {
     ast._strings = newAst.strings;
 
     let theFun = null; // current proc
+    let ifStacks = []; // for resolving the JUMPIF number of if.body.length
 
     const irSolver = (node) => {
         let offset;
@@ -1015,10 +1022,18 @@ function transformer(ast) {
         }
         ast._variables.push(node)
         // node.offset = ast._variables.length -1;
+        return node
     }
 
-    function getVariable(varName) {
+    function getVariable(varName, props) {
         let theVar = theFun.vars[varName]
+        if(!theVar && props &&  props.type == "NumberLiteral"){
+            theVar = ast._variables.find(v => v.type == props.varType && v.value == varName)
+            if(!theVar){
+                theVar = setVariable({...props, name:`#${varName}`})
+            }
+            // theVar && setVariable(theVar)
+        }
         if(!theVar){
             theVar = ast._variables.find(v => v.NAME == varName.toUpperCase())
             // theVar && setVariable(theVar)
@@ -1026,6 +1041,9 @@ function transformer(ast) {
         if(!theVar){
             theVar = ast._registry.find(cls => cls.ALIAS == varName.toUpperCase())
             theVar && setVariable(theVar)
+        }
+        if(!theVar){
+            theVar = setVariable({name:`$${varName}`, ...props, })
         }
         return theVar
     }
@@ -1169,6 +1187,10 @@ function transformer(ast) {
         NumberLiteral: {
             // We'll visit them on enter.
             enter(node, parent) {
+                const v = getVariable(node.value, node)
+                // debugger
+                theFun && theFun.ir.push(`PUSH ${v.offset} ${v.value}`)
+
                 // We'll create a new node also named `NumberLiteral` that we will push to
                 // the parent context.
                 // parent._context.push({
@@ -1176,6 +1198,15 @@ function transformer(ast) {
                 //     value: node.value,
                 // });
             },
+        },
+        identifier: {
+            enter(node, parent) {
+                if(theFun){
+                    const v = getVariable(node.name, node)
+                    // debugger
+                    theFun && theFun.ir.push(`PUSH ${v.offset} ${v.name}`)
+                }
+            }
         },
 
         // Next we have `StringLiteral`
@@ -1304,10 +1335,30 @@ function transformer(ast) {
         IfExpression: {
             enter(node, parent) {
                 // debugger
-                console.log('if:', node.expect)
-                const ir = generateIR(node.expect, irSolver)
-                theFun.ir.push(...ir)
+                // console.log('if:', node.expect)
+                // const ir = generateIR(node.expect, irSolver)
+                // theFun.ir.push(...ir)
                 // console.warn('if:', ir)
+                ifStacks.push(theFun.ir.length)
+            },
+
+            neck(node,parent){
+                const start = ifStacks.pop()
+                const finish = theFun.ir.length
+                theFun.ir.push(`JUMPIF ${finish - start} `)
+            }
+        },
+
+        BinaryExpr:{
+            exit(node,parent){
+                const opMap = {
+                    "+": "ADD", "-": "SUB",
+                    "*": "MUL", "/": "DIV", "%": "MOD",
+                    "<": "LT", "<=": "LTE", ">": "GT", ">=": "GTE",
+                    "==": "EQ", "!=": "NEQ",
+                    "&&": "LOGAND", "||": "LOGOR"
+                };
+                theFun.ir.push(opMap[node.operator])
             }
         },
 
