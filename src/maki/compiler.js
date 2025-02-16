@@ -1330,6 +1330,7 @@ function transformer(ast) {
                     name: node.name,
                     ir: [],
                     vars: {},
+                    start: irByteLen
                 }
                 
                 //? register by first visible in program
@@ -1349,7 +1350,7 @@ function transformer(ast) {
                     ast._bindngs.push({
                         variableIndex,
                         methodIndex,
-                        binaryOffset: -1,
+                        binaryOffset: theFun.start,
                         className, 
                         methodName, 
                         // classIndex,
