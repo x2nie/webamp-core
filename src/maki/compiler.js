@@ -969,6 +969,7 @@ function transformer(ast) {
     ast._bindngs = newAst.bindngs;
     ast._externals = newAst.externals;
     ast._procedures = newAst.procedures;
+    ast._strings = newAst.strings;
 
     let theFun = null; // current proc
 
@@ -1027,6 +1028,18 @@ function transformer(ast) {
             theVar && setVariable(theVar)
         }
         return theVar
+    }
+
+    function getString(strVal) {
+        let theStr = ast._strings.find(s => s == strVal)
+        if(!theStr){
+            const name = `"${strVal}"`
+            setVariable({name, value: strVal, type:'string'});    //? let it be processed as a valid var
+            theStr = getVariable(name);       //? the valid var
+            ast._strings.push(theStr)   //? actually only need: {value, offset}
+            // theVar && setVariable(theVar)
+        }
+        return theStr
     }
 
     function getMethod(methodName, className) {
@@ -1168,7 +1181,9 @@ function transformer(ast) {
         // Next we have `StringLiteral`
         StringLiteral: {
             enter(node, parent) {
-                debugger
+                const s = getString(node.value)
+                // debugger
+                theFun && theFun.ir.push(`PUSH ${s.offset} ${s.name}`)
                 // parent._context.push({
                 //     type: 'StringLiteral',
                 //     value: node.value,
