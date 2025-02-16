@@ -22,7 +22,8 @@ export const COMMANDS = {
   17: { name: "jumpIfNot", arg: "line", in: "1", out: "0" },
   18: { name: "jump", arg: "line", in: "0", out: "0" },
 
-  24: { name: "call", arg: "objFunc", in: "0", out: "1" },
+  // 24: { name: "call", arg: "objFunc", in: "0", out: "1" },
+  24: { name: "apiCall", arg: "objFunc", in: "0", out: "1" },
   // 25: { name: "callGlobal", arg: "func", in: "0", out: "1" },
   25: { name: "userfuncCall", arg: "func", in: "0", out: "1" },
 
@@ -67,8 +68,8 @@ export const COMMANDS = {
   96: { name: "new", arg: "obj", in: "0", out: "1" },
   97: { name: "delete", short: "delete", in: "1", out: "1" },
 
-  // 112: { name: "strangeCall", arg: "objFunc", in: "0", out: "1" },
-  112: { name: "apiCall", arg: "objFunc", in: "0", out: "1" },
+  112: { name: "strangeCall", arg: "objFunc", in: "0", out: "1" },
+  // 112: { name: "apiCall", arg: "objFunc", in: "0", out: "1" },
 
   // Mystery opcode
   // "255": { name: "MYSTERY", short: "WAT", in: "0", out: "0" },

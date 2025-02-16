@@ -1012,6 +1012,13 @@ function transformer(ast) {
         }
     }
 
+    let irByteLen = 0;
+    function irFun(num, opcodes){
+        irByteLen += num;
+        // theFun.ir.push(opcodes)
+        theFun.ir.push(`${num}  ${opcodes}`)
+    }
+
     function setVariable(variable){
         const node ={
             ...variable,
@@ -1028,9 +1035,9 @@ function transformer(ast) {
     function getVariable(varName, props) {
         let theVar = theFun.vars[varName]
         if(!theVar && props &&  props.type == "NumberLiteral"){
-            theVar = ast._variables.find(v => v.type == props.varType && v.value == varName)
+            theVar = ast._variables.find(v => v.literal && v.type == props.varType && v.value == varName)
             if(!theVar){
-                theVar = setVariable({...props, name:`#${varName}`})
+                theVar = setVariable({...props, name:`#${varName}`, literal:true})
             }
             // theVar && setVariable(theVar)
         }
@@ -1180,7 +1187,7 @@ function transformer(ast) {
                     node.offset = offset
                 }
                 // return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
-                theFun.ir.push(`PUSH ${offset} LOCALVAR`)
+                irFun(5, `PUSH ${offset} LOCALVAR`)
             },
         },
 
@@ -1189,7 +1196,7 @@ function transformer(ast) {
             enter(node, parent) {
                 const v = getVariable(node.value, node)
                 // debugger
-                theFun && theFun.ir.push(`PUSH ${v.offset} ${v.value}`)
+                theFun && irFun(5, `PUSH ${v.offset} ${v.value}`)
 
                 // We'll create a new node also named `NumberLiteral` that we will push to
                 // the parent context.
@@ -1204,7 +1211,7 @@ function transformer(ast) {
                 if(theFun){
                     const v = getVariable(node.name, node)
                     // debugger
-                    theFun && theFun.ir.push(`PUSH ${v.offset} ${v.name}`)
+                    theFun && irFun(5, `PUSH ${v.offset} ${v.name}`)
                 }
             }
         },
@@ -1214,7 +1221,7 @@ function transformer(ast) {
             enter(node, parent) {
                 const s = getString(node.value)
                 // debugger
-                theFun && theFun.ir.push(`PUSH ${s.offset} ${s.name}`)
+                theFun && irFun(5, `PUSH ${s.offset} ${s.name}`)
                 // parent._context.push({
                 //     type: 'StringLiteral',
                 //     value: node.value,
@@ -1337,19 +1344,23 @@ function transformer(ast) {
                 // debugger
                 // console.log('if:', node.expect)
                 // const ir = generateIR(node.expect, irSolver)
-                // theFun.ir.push(...ir)
+                // irFun(5, ...ir)
                 // console.warn('if:', ir)
+                irFun(0, `//IF () `)
             },
             
             neck(node,parent){
-                ifStacks.push(theFun.ir.length)
-                theFun.ir.push(`JUMPIF <later.num> `)
-                // theFun.ir.push(`<later.num> `)
+                const pos= theFun.ir.length;
+                irFun(5, `JUMPIF <later.num> `)
+                ifStacks.push({pos, start:irByteLen})
+                // irFun(5, `<later.num> `)
             },
             exit(node,parent){
-                const start = ifStacks.pop()
-                const finish = theFun.ir.length
-                theFun.ir[start] = `JUMPIF ${finish} `
+                irFun(0, `//eof.IF () `)
+                const mark = ifStacks.pop()
+                const finish = irByteLen - mark.start 
+                // debugger
+                theFun.ir[mark.pos] = `JUMPIF ${finish} `
             }
         },
 
@@ -1362,26 +1373,28 @@ function transformer(ast) {
                     "==": "EQ", "!=": "NEQ",
                     "&&": "LOGAND", "||": "LOGOR"
                 };
-                theFun.ir.push(opMap[node.operator])
+                irFun(1, opMap[node.operator])
             }
         },
 
         Parameter: {
             enter(node, parent) {
-                theFun.ir.push(`POPTO ${node.name}`)
+                irFun(5, `POPTO ${node.name}`)
             }
         },
 
         Return: {
             enter(node, parent) {
-                theFun.ir.push(`RET ${node.value.value}`)
+                let variable = getVariable(node.value.value, node.value)
+                irFun(5, `PUSH ${variable.offset}`)
+                irFun(1, `RET //${node.value.value}`)
             }
         },
 
         Assignment: {
             exit(node, parent) {
-                theFun.ir.push(`MOV  @${node.operator}`)
-                theFun.ir.push(`POP`)
+                irFun(1, `MOV  @${node.operator}`)
+                irFun(1, `POP`)
             }
         },
 
@@ -1427,7 +1440,7 @@ function transformer(ast) {
                         debugger
                         // variable =
                     }
-                    theFun.ir.push(`PUSH  ${variable.offset} CALL.INSTANCE`)  //? the instance
+                    irFun(5, `PUSH  ${variable.offset} CALL.INSTANCE`)  //? the instance
                     
                 }
             },
@@ -1442,7 +1455,7 @@ function transformer(ast) {
                         debugger
                         // variable =
                     }
-                    theFun.ir.push(`APICALL ${method.offset}  ${methodName} `)  //? the instance
+                    irFun(5, `APICALL ${method.offset}  ${methodName} `)  //? the instance
                     
                     // let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
                     // if(obj == null){
