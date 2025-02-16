@@ -988,37 +988,37 @@ function transformer(ast) {
     let theFun = null; // current proc
     let ifStacks = []; // for resolving the JUMPIF number of if.body.length
 
-    const irSolver = (node) => {
-        let offset;
+    // const irSolver = (node) => {
+    //     let offset;
 
-        switch (node.type) {
-            case 'identifier':
-            case 'LocalVar':
-            case 'NumberLiteral':
-                if(node.name in theFun.vars){
-                    offset = theFun.vars[node.name].offset
-                } else {
-                    theFun.vars[node.name] = node;
-                    ast._variables.push({
-                        name: node.name,
-                        node: node,
-                    })
-                    offset = ast._variables.length -1;
-                    node.offset = offset
-                }
-                return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
-                break;
+    //     switch (node.type) {
+    //         case 'identifier':
+    //         case 'LocalVar':
+    //         case 'NumberLiteral':
+    //             if(node.name in theFun.vars){
+    //                 offset = theFun.vars[node.name].offset
+    //             } else {
+    //                 theFun.vars[node.name] = node;
+    //                 ast._variables.push({
+    //                     name: node.name,
+    //                     node: node,
+    //                 })
+    //                 offset = ast._variables.length -1;
+    //                 node.offset = offset
+    //             }
+    //             return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
+    //             break;
 
-            case 'CallExpression':
-                break;
+    //         case 'CallExpression':
+    //             break;
 
-            case '*':
-                break;
+    //         case '*':
+    //             break;
 
-            default:
-                break;
-        }
-    }
+    //         default:
+    //             break;
+    //     }
+    // }
 
     let irByteLen = 0;
     function irFun(num, opcodes){
@@ -1043,7 +1043,7 @@ function transformer(ast) {
     function getVariable(varName, props) {
         let theVar = theFun.vars[varName]
         if(!theVar && props &&  props.type == "NumberLiteral"){
-            theVar = ast._variables.find(v => v.literal && v.type == props.varType && v.value == varName)
+            theVar = ast._variables.find(v => /* v.literal && */ v.type == props.type && v.value == varName)
             if(!theVar){
                 theVar = setVariable({...props, name:`#${varName}`, literal:true})
             }
@@ -1064,7 +1064,7 @@ function transformer(ast) {
     }
 
     function getString(strVal) {
-        let theStr = ast._strings.find(s => s == strVal)
+        let theStr = ast._strings.find(s => s.value == strVal)
         if(!theStr){
             const name = `"${strVal}"`
             setVariable({name, value: strVal, type:'string'});    //? let it be processed as a valid var
@@ -1151,6 +1151,13 @@ function transformer(ast) {
                     // type: node.type
                     isUsed: false, //? not yet, set true by opcode/assembler
                 });
+            }
+        },
+        Instanciate: {
+            enter(node, parent) {
+                const NAME = node.target.value.toUpperCase()
+                const cls = ast._registry.find(reg => reg.ALIAS == NAME)
+                irFun(5, `NEW ${cls.offset} Instanciate`)
             }
         },
 
@@ -1244,6 +1251,7 @@ function transformer(ast) {
                     key: node.data[0].value,
                     alias,
                     ALIAS: alias.toUpperCase(),
+                    offset: ast._registry.length,
                 });
             },
         },
@@ -1292,11 +1300,13 @@ function transformer(ast) {
                     let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
                     const variable = ast._variables.find(v => v.NAME == CLASSNAME)
                     // debugger
-                    const variableIndex = ast._variables.indexOf(variable)
+                    node.variableIndex = ast._variables.indexOf(variable)
                     if(obj == null){
                         obj = ast._registry.find(cls => cls.alias == variable.type)
                     }
                     let classIndex = ast._registry.indexOf(obj)
+                    node.classIndex = classIndex
+                    node.methodIndex = ast._methods.length;
                     //? method
                     ast._methods.push({
                         classIndex,
@@ -1313,7 +1323,7 @@ function transformer(ast) {
                     //     // classIndex,
                     // });
                 }
-                node.uf = uf !== undefined
+                node.uf = uf != null
 
                 //? set container of bytecodes
                 const fun = {
@@ -1335,14 +1345,19 @@ function transformer(ast) {
             exit(node, parent) {
                 if(!node.uf){
                     //? binding. set it after assembler, as shown in usual maki's methods order
+                    const {className, methodName, variableIndex, methodIndex} = node;
                     ast._bindngs.push({
                         variableIndex,
-                        methodIndex: ast._methods.length -1,
+                        methodIndex,
                         binaryOffset: -1,
-                        className, methodName, 
+                        className, 
+                        methodName, 
                         // classIndex,
                     });
                 }
+                //? in binary it always happen, so let be identical first. optimized later
+                irFun(5, `PUSH 1`)
+                irFun(1, `RET `)
                 theFun = null;
             }
         },
@@ -1386,7 +1401,8 @@ function transformer(ast) {
                 // debugger
                 const lastIr = theFun.ir[theFun.ir.length -1]
                 if(!lastIr.startsWith('1  RET ') && !lastIr.startsWith(';')){
-                    irFun(1, `POP  //; ${JSON.stringify(node)} `)
+                    // irFun(1, `POP  //; ${JSON.stringify(node)} `)
+                    irFun(1, 'POP')
                 }
                 theFun.ir.push(';')
             }
@@ -1424,8 +1440,8 @@ function transformer(ast) {
 
         Assignment: {
             exit(node, parent) {
-                irFun(1, `MOV  @${node.operator}`)
-                // irFun(1, `POP`)
+                // irFun(1, `MOV  @${node.operator}`)
+                irFun(1, `MOV`)
             }
         },
 
