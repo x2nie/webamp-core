@@ -1477,7 +1477,7 @@ function transformer(ast) {
                     if(!variable || variable.offset==null){
                         debugger
                     }
-                    irFun(5, `PUSH  ${variable.offset} CALL.INSTANCE`)  //? the instance
+                    irFun(5, `PUSH ${variable.offset} CALL.INSTANCE`)  //? the instance
                 }
             },
 
