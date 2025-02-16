@@ -1383,7 +1383,7 @@ function transformer(ast) {
                 // irFun(0, `;`)
                 // const mark = ifStacks.pop()
                 // const finish = irByteLen - mark.start 
-                debugger
+                // debugger
                 const lastIr = theFun.ir[theFun.ir.length -1]
                 if(!lastIr.startsWith('1  RET ') && !lastIr.startsWith(';')){
                     irFun(1, `POP  //; ${JSON.stringify(node)} `)
@@ -1407,7 +1407,10 @@ function transformer(ast) {
 
         Parameter: {
             enter(node, parent) {
-                irFun(5, `POPTO ${node.name}`)
+                // irFun(5, `POPTO ${node.name}`)
+                // debugger
+                const variable = getVariable(node.name, node)
+                irFun(5, `POPTO ${variable.offset}`)
             }
         },
 
