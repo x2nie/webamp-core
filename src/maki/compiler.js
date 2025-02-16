@@ -1,4 +1,4 @@
-import { buildExpressionTree } from "./astTree";
+import { buildExpressionTree, parseFunctionArguments } from "./astTree";
 import { generateIR } from "./ir";
 
 function hideComments(code) {
@@ -347,7 +347,8 @@ function parser(tokens) {
                     node.body = walk().body;    //? codeDomain
                 } else {
                     node.type = "CallExpression"
-                    node.arguments = params.params.filter(el => el.type != 'comma')
+                    // node.arguments = params.params.filter(el => el.type != 'comma')
+                    node.arguments = parseFunctionArguments(params.params)
                     // current++
                 }
             }
@@ -1425,23 +1426,11 @@ function transformer(ast) {
 
                 if(!uf){
                     //? non user-function, find class.varOffset
-                    // const CLASSNAME = className.toUpperCase()
-                    // let variable = ast._variables.find(v => v.NAME == CLASSNAME)
-                    // if(!variable){
-                    //     TO DO: ast._variables.push()
-                    //     debugger
-                    //     // variable =
-                    // }
-                    // // debugger
-                    // const variableIndex = ast._variables.indexOf(variable)
                     let variable = getVariable(className)
                     if(!variable || variable.offset==null){
-                        //TO DO: ast._variables.push()
                         debugger
-                        // variable =
                     }
                     irFun(5, `PUSH  ${variable.offset} CALL.INSTANCE`)  //? the instance
-                    
                 }
             },
 

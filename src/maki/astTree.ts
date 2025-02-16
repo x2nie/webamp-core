@@ -106,3 +106,23 @@ export function buildExpressionTree(params: any[]): ASTNode {
 
     return parseLogicalOr();
 }
+
+export function parseFunctionArguments(params: any[]): ASTNode[] {
+  let parsedArguments: ASTNode[] = [];
+  let tempArgs: any[] = [];
+
+  for (let token of params) {
+    if (token.type === "comma") {
+      parsedArguments.push(buildExpressionTree(tempArgs));
+      tempArgs = [];
+    } else {
+      tempArgs.push(token);
+    }
+  }
+
+  if (tempArgs.length > 0) {
+    parsedArguments.push(buildExpressionTree(tempArgs));
+  }
+
+  return parsedArguments;
+}
