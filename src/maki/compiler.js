@@ -580,7 +580,14 @@ function parser(tokens) {
                 //     body: parseStatement(body.filter(token => token != null)),
                 // }
                 const statements = parseStatement(body.filter(token => token != null))
-                statements.forEach(statement => node.body.push(statement))
+                // statements.forEach(statement => node.body.push(statement))
+                statements.forEach(statement => {
+                    //? this wrap is for stack protection: no stack leaves in the end of statement
+                    node.body.push({
+                        type: 'ExpressionStatement',
+                        body: [statement],
+                    })
+                })
                 // if(statements.length > 1){
                 //     debugger
                 // } else {
@@ -1357,11 +1364,31 @@ function transformer(ast) {
                 // irFun(5, `<later.num> `)
             },
             exit(node,parent){
-                irFun(0, `//eof.IF () `)
+                // irFun(0, `//eof.IF () `)
                 const mark = ifStacks.pop()
                 const finish = irByteLen - mark.start 
                 // debugger
                 theFun.ir[mark.pos] = `JUMPIF ${finish} `
+            }
+        },
+
+        ExpressionStatement:{
+            // enter(node, parent) {
+            //     // irFun(0, `//IF () `)
+            //     const pos= theFun.ir.length;
+            //     ifStacks.push({pos, start:irByteLen})
+            // },
+            
+            exit(node,parent){
+                // irFun(0, `;`)
+                // const mark = ifStacks.pop()
+                // const finish = irByteLen - mark.start 
+                debugger
+                const lastIr = theFun.ir[theFun.ir.length -1]
+                if(!lastIr.startsWith('1  RET ') && !lastIr.startsWith(';')){
+                    irFun(1, `POP  //; ${JSON.stringify(node)} `)
+                }
+                theFun.ir.push(';')
             }
         },
 
@@ -1395,7 +1422,7 @@ function transformer(ast) {
         Assignment: {
             exit(node, parent) {
                 irFun(1, `MOV  @${node.operator}`)
-                irFun(1, `POP`)
+                // irFun(1, `POP`)
             }
         },
 
