@@ -1339,13 +1339,17 @@ function transformer(ast) {
                 // const ir = generateIR(node.expect, irSolver)
                 // theFun.ir.push(...ir)
                 // console.warn('if:', ir)
-                ifStacks.push(theFun.ir.length)
             },
-
+            
             neck(node,parent){
+                ifStacks.push(theFun.ir.length)
+                theFun.ir.push(`JUMPIF <later.num> `)
+                // theFun.ir.push(`<later.num> `)
+            },
+            exit(node,parent){
                 const start = ifStacks.pop()
                 const finish = theFun.ir.length
-                theFun.ir.push(`JUMPIF ${finish - start} `)
+                theFun.ir[start] = `JUMPIF ${finish} `
             }
         },
 
@@ -1376,7 +1380,7 @@ function transformer(ast) {
 
         Assignment: {
             exit(node, parent) {
-                theFun.ir.push(`MOV _ ${node.operator}`)
+                theFun.ir.push(`MOV  @${node.operator}`)
                 theFun.ir.push(`POP`)
             }
         },
