@@ -68,7 +68,7 @@ export const COMMANDS = {
   96: { name: "new", arg: "obj", in: "0", out: "1" },
   97: { name: "delete", short: "delete", in: "1", out: "1" },
 
-  112: { name: "strangeCall", arg: "objFunc", in: "0", out: "1" },
+  112: { name: "strangeCall", bytes: 6, arg: "objFunc", in: "0", out: "1" },
   // 112: { name: "apiCall", arg: "objFunc", in: "0", out: "1" },
 
   // Mystery opcode
@@ -83,7 +83,8 @@ export const COMMANDS = {
 export const OPCODES = Object.fromEntries(
   Object.entries(COMMANDS).map(([key, value]) => [
     value.name.toUpperCase(),
-    { code: Number(key), ...value, bytes: value.arg? 5 : 1  },
+    //@ts-ignore
+    { code: Number(key), ...value, bytes: value.bytes || (value.arg? 5 : 1)  },
   ])
 );
 

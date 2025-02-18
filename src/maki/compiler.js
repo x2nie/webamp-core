@@ -954,6 +954,7 @@ function transformer(ast) {
     // node.
     let newAst = {
         type: 'Program',
+        stackprot: false, //? it maybe changed in between
         userfuncs: [],  //? user-functions. will be anonymous-function
         procedures: [], //? byte code of function (userfunc + events)
         methods: [],    //? api-functions; name is visible in maki
@@ -1023,6 +1024,7 @@ function transformer(ast) {
 
     let irByteLen = 0;
     function irFun(opcodes){
+        let write = false;
         let num = 0;
         if(!opcodes.startsWith(';') && !opcodes.startsWith('//')){
             const opcode = opcodes.split(' ')[0]
@@ -1031,6 +1033,7 @@ function transformer(ast) {
                 throw new Error(`Invalid opcode :"${opcode}" in ${opcode}`);
             }
             num = Number(spec.bytes)
+            write = true;
         }
         irByteLen += num;
         // theFun.ir.push(opcodes)
@@ -1110,6 +1113,9 @@ function transformer(ast) {
 
         Predecl: {
             enter(node, parent) {
+                if(node.name == '.STACKPROT'){
+                    newAst.stackprot = true;
+                }
                 if(node.name == '.CODE'){
                     ast._variables.push({
                         isGlobal: true,
@@ -1340,6 +1346,7 @@ function transformer(ast) {
                 const fun = {
                     name: node.name,
                     ir: [],
+                    bytes: [],
                     vars: {},
                     start: irByteLen
                 }
@@ -1503,7 +1510,9 @@ function transformer(ast) {
                         debugger
                         // variable =
                     }
-                    irFun(`APICALL ${method.offset}  ${methodName} `)  //? the instance
+                    // irFun(`APICALL ${method.offset}  ${methodName} `)  //? the instance
+                    const opcode = newAst.stackprot? 'STRANGECALL' : 'APICALL'
+                    irFun(`${opcode} ${method.offset}  ${methodName} `)  //? the instance
                     
                     // let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
                     // if(obj == null){
