@@ -83,7 +83,7 @@ export const COMMANDS = {
 export const OPCODES = Object.fromEntries(
   Object.entries(COMMANDS).map(([key, value]) => [
     value.name.toUpperCase(),
-    { code: Number(key), ...value },
+    { code: Number(key), ...value, bytes: value.arg? 5 : 1  },
   ])
 );
 
