@@ -18,13 +18,13 @@
         bottom: 0;
         left: 0;
       }
-      body {
+      .body {
         margin: 0;
         padding: 0;
         display: flex;
         flex-direction: row;
     }
-    body > div {
+    .body > div {
         padding: 5px;
         max-width: 60ch;
         max-height: 100vh;
@@ -57,24 +57,7 @@
   <body>
     
     <!-- <div id="editor"></div> -->
-    <div>
-      <h3>Code 
-        <select id="file-list">
-          <option value="/assets/skins/SimpleTutorial/SongStopper">SongStopper</option>
-          <option value="/assets/skins/SimpleTutorial/test-script">script</option>
-          <option value="/assets/skins/WinampModernPP/scripts/songinfo">Songinfo debug.sym</option>
-          <option value="/assets/skins/CornerAmp_Redux/scripts/corner">corner</option>
-        </select>
-      </h3>
-      <pre id="code" class="half"></pre>
-      <pre id="std" class="half"></pre>
-    </div>
-    <div><h3>Token</h3><pre id="token"></pre></div>
-    <div><h3>AST </h3><pre id="parsed"></pre></div>
-    <!-- <div><h3>AST 2</h3><pre id="parsed2"></pre></div> -->
-    <div><h3>Transformed</h3><pre id="transformed"></pre></div>
-    <!-- <div><h3>Processed</h3><pre id="processed"></pre></div> -->
-    <div><h3>Generated</h3><pre id="generated"></pre></div>
+    
     <script type="module" src="/codetransform.js"></script>
     <!-- <script src="/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script> -->
     <!-- <script

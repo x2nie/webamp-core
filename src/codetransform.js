@@ -1,3 +1,4 @@
+import { Component, mount, reactive, useEffect, useState, xml } from "@odoo/owl";
 import { tokenizer, parser, transformer, hideComments } from "./maki/compiler";
 
 let input = `
@@ -219,6 +220,7 @@ Int versionCheck()
 #endif
 `;
 import std_mi from "./std_mi_566";
+import { BinTree } from "./hexedit";
 
 const song_stopper_m = `
 #include <lib/std.mi>
@@ -251,42 +253,135 @@ SongStop.onTimer(){
 }
 
 `
-function updateUI(input){
-    // input = std_mi
-    // input = song_stopper_m
-    // input = song_stopper_m
-    document.getElementById('code').innerText = input
-    input = std_mi + input
-    document.getElementById('std').innerText = std_mi
 
-    input = hideComments(input)
-    const tokens = tokenizer(input);    document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
-    // console.log(tokens)
-    const ast = parser(tokens.filter(tk => tk !=null & tk.type != 'comment'));         document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
-    const ast2 = transformer(ast);         document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2);
-    document.getElementById('generated').innerText = JSON.stringify(ast2.variables, null, 2)
-}
 // window.loaded()
-async function fileChange(ev){
-    console.log(ev.target.value)
-    const url = `${ev.target.value}.m`
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Response status: ${response.status}`);
-    }
-    const input = await response.text();
-    updateUI(input)
-}
+// async function fileChange(ev) {
+//     console.log(ev.target.value)
+//     const url = `${ev.target.value}.m`
+//     const response = await fetch(url);
+//     if (!response.ok) {
+//         throw new Error(`Response status: ${response.status}`);
+//     }
+//     const input = await response.text();
+//     updateUI(input)
+// }
 
 //? DEMO
-const comboobox = document.getElementById('file-list')
-comboobox.onchange = fileChange
+// const comboobox = document.getElementById('file-list')
+// comboobox.onchange = fileChange
 
-const makiPath = localStorage.getItem("makiPath")
-if(makiPath){
-    comboobox.value = makiPath
-}
-// else {
-    // Dispatch it.
-    comboobox.dispatchEvent(new Event('change'));
+// const makiPath = localStorage.getItem("makiPath")
+// if (makiPath) {
+//     comboobox.value = makiPath
 // }
+// else {
+// Dispatch it.
+// comboobox.dispatchEvent(new Event('change'));
+// }
+
+
+class Root extends Component {
+    static template = xml`
+      <div class="body">
+        <!-- <HexEdit increment="2"/> -->
+        <div>
+            <h3>Code 
+            <select id="file-list" t-model="state.file">
+                <option value="/assets/skins/SimpleTutorial/SongStopper">SongStopper</option>
+                <option value="/assets/skins/SimpleTutorial/test-script">script</option>
+                <option value="/assets/skins/WinampModernPP/scripts/songinfo">Songinfo debug.sym</option>
+                <option value="/assets/skins/CornerAmp_Redux/scripts/corner">corner</option>
+            </select>
+            </h3>
+            <pre id="code" class="half"></pre>
+            <pre id="std" class="half"></pre>
+        </div>
+        <div><h3>Token</h3><pre id="token"></pre></div>
+        <div><h3>AST </h3><pre id="parsed"></pre></div>
+        <div><h3>Transformed</h3><pre id="transformed"></pre></div>
+        <div><h3>Variables</h3><pre id="variables"></pre></div>
+        <!-- <div><h3>Processed</h3><pre id="processed"></pre></div> -->
+        <!-- <div><h3>Generated</h3><pre id="generated"></pre></div> -->
+        <BinTree/>
+      </div>
+      `;
+    static components = { BinTree };
+
+    setup() {
+        // this.state = useState({binary:[], blocks:[]});
+        const makiPath = localStorage.getItem("makiPath") || ''
+        this.state = useState({ 
+            file: makiPath 
+        });
+        this.binary = useState(this.env.binary)
+        // onWillStart(async () => {
+        //   const makiPath = assureUrl()
+        //   // })
+        // })
+        useEffect(
+            (makiPath) => {
+                localStorage.setItem("makiPath", makiPath);
+                makiPath && this.fileChange(`${makiPath}.m`)
+                // makiPath && this.loadMaki(`${makiPath}.maki`)
+            },
+            () => [this.state.file]
+        )
+    }
+
+    async fileChange(url) {
+        console.log(url)
+        // const url = url
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Response status: ${response.status}`);
+        }
+        const input = await response.text();
+        this.updateUI(input)
+    }
+
+    updateUI(input) {
+        // input = std_mi
+        // input = song_stopper_m
+        // input = song_stopper_m
+        document.getElementById('code').innerText = input
+        input = std_mi + input
+        document.getElementById('std').innerText = std_mi
+    
+        input = hideComments(input)
+        const tokens = tokenizer(input); document.getElementById('token').innerText = JSON.stringify(tokens, null, 2)
+        // console.log(tokens)
+        const ast = parser(tokens.filter(tk => tk != null & tk.type != 'comment')); document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
+        const ast2 = transformer(ast); document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2);
+        document.getElementById('variables').innerText = JSON.stringify(ast2.variables, null, 2)
+    }
+
+    async loadMaki(makiPath) {
+        // fetch(makiPath).then(async (response) => {
+        const response = await fetch(makiPath);
+        const scriptContents = await response.arrayBuffer();
+        if (scriptContents == null) {
+            `ScriptFile file not found at path ${makiPath}`;
+        } else {
+            const data = new Uint8Array(scriptContents);
+            this.binary.data = [...data];
+            // console.log( new Uint8Array(scriptContents));
+            // const parsedScriptXp = parseMakiXp(scriptContents);
+            // const parsedScript1 = parseMaki1(scriptContents, makiPath);
+            const parsedScriptXp = parseMaki1(scriptContents);
+            // explore(parsedScriptXp, parsedScript1);
+            this.binary.blocks = parsedScriptXp.blocks
+            console.log(parsedScriptXp)
+        }
+    }
+}
+
+const env = {
+    binary: reactive({
+        code: '',       //? source code
+        data: [],
+        blocks: [],
+        selected: -1,   //? block.index
+    })
+}
+
+mount(Root, document.body, { env });

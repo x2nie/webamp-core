@@ -1359,6 +1359,7 @@ function transformer(ast) {
                 //? in binary it always happen, so let be identical first. optimized later
                 irFun(5, `PUSH 1`)
                 irFun(1, `RET `)
+                theFun.end=  irByteLen;
                 theFun = null;
             }
         },
@@ -1384,7 +1385,7 @@ function transformer(ast) {
                 const mark = ifStacks.pop()
                 const finish = irByteLen - mark.start 
                 // debugger
-                theFun.ir[mark.pos] = `JUMPIF ${finish} `
+                theFun.ir[mark.pos] = `5 JUMPIF ${finish} `
             }
         },
 

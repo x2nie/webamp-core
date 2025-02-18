@@ -78,3 +78,30 @@ export const COMMANDS = {
 
   301: { name: "blockEnd", short: "}", in: "0", out: "0" },
 };
+
+
+export const OPCODES = Object.fromEntries(
+  Object.entries(COMMANDS).map(([key, value]) => [
+    value.name.toUpperCase(),
+    { code: Number(key), ...value },
+  ])
+);
+
+// console.log(OPCODES);
+/*
+{
+  EQ: {
+    code: 8,
+    in: "2",
+    name: "eq",
+    out: "1",
+    short: "=="
+  },
+  GT: {
+    code: 10,
+    in: "2",
+    name: "gt",
+    out: "1",
+    short: "&gt;"
+  },
+*/
