@@ -1140,6 +1140,7 @@ function transformer(ast) {
                         name: 'System',
                         NAME: 'SYSTEM',
                         isObject: 1,
+                        classIndex: 1,
                         predeclared: true, // https://en.wikipedia.org/wiki/Predeclared
                         isUsed: 1,
                         offset: 0,
@@ -1148,6 +1149,7 @@ function transformer(ast) {
                         isGlobal: true,
                         name: 'NULL',
                         NAME: 'NULL',
+                        type: 'int',
                         isObject: 0,
                         isUsed: 1,
                         offset: 1,
@@ -1156,6 +1158,7 @@ function transformer(ast) {
                         isGlobal: true,
                         name: '__deprecated_runtime',
                         NAME: '__DEPRECATED_RUNTIME',
+                        type: 'int',
                         isObject: 0,
                         isUsed: 1,
                         offset: 2,
@@ -1199,7 +1202,7 @@ function transformer(ast) {
         GlobalDeclaration: {
             enter(node, parent) {
                 node.declarations.forEach(d =>{
-                    const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == d.value.toUpperCase())
+                    const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
                     setVariable({
                         ...node,
                         isObject: classIndex >= 0,

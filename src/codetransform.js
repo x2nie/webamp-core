@@ -376,6 +376,24 @@ class Root extends Component {
             f.writePascalString(fun.methodName)
         })
         
+        //? variables
+        f.writeUint32LE(ast.variables.length); // Version
+        ast.variables.forEach(variable => {
+            const isObject = variable.classIndex && variable.classIndex >=0;
+            const typeOffset = isObject? variable.classIndex : PRIMITIVE_TYPES[variable.type.toUpperCase()] || 255;
+            f.writeUint8(typeOffset)
+            f.writeUint8(isObject? 1 : 0)
+            //TODO:
+            f.writeUint16LE(0)     //? isSubclass 
+
+            f.writeUint16LE(0)     //? uinit1 
+            f.writeUint16LE(0)     //? uinit2 
+            f.writeUint16LE(0)     //? UNKNOWN 1 
+            f.writeUint16LE(0)     //? UNKNOWN 2 
+            f.writeUint8(variable.isGlobal? 1 : 0)      //? Global
+            f.writeUint8(variable.predeclared? 1 : 0)   //? System
+        })
+        
         // debugger
         this.binary.binary = f.getData()
     }
@@ -413,6 +431,14 @@ class Root extends Component {
         document.body.removeChild(a);
     }
 }
+
+const PRIMITIVE_TYPES = {
+    "BOOLEAN": 5,
+    "INT": 2,
+    "FLOAT": 3,
+    "DOUBLE": 4,
+    "STRING": 6,
+  };
 
 const env = {
     binary: reactive({
