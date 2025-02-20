@@ -393,6 +393,14 @@ class Root extends Component {
             f.writeUint8(variable.isGlobal? 1 : 0)      //? Global
             f.writeUint8(variable.predeclared? 1 : 0)   //? System
         })
+                
+        //? resource-string
+        const res = ast.variables.filter(v => v.type == 'string')
+        f.writeUint32LE(res.length); // Version
+        res.forEach(r => {
+            f.writeUint16LE(r.offset)     //? var.offset 
+            f.writePascalString(r.value || '' )
+        })
         
         // debugger
         this.binary.binary = f.getData()

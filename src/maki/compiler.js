@@ -1072,6 +1072,14 @@ function transformer(ast) {
             theVar && setVariable(theVar)
         }
         if(!theVar){
+            theVar = ast._defined.find(cls => cls.NAME == varName.toUpperCase())
+            if(theVar){
+                theVar.type = theVar.value? theVar.value.type : null
+                theVar.value = theVar.value? theVar.value.value: null;
+                setVariable(theVar)
+            }
+        }
+        if(!theVar){
             theVar = setVariable({name:`$${varName}`, ...props, })
         }
         return theVar
@@ -1183,10 +1191,11 @@ function transformer(ast) {
             enter(node, parent) {
                 ast._defined.push({
                     name: node.name,
+                    NAME: node.name.toUpperCase(),
                     isGlobal: true,
                     isObject: 0,
                     value: node.value,
-                    // type: node.type
+                    // type: node.type,
                     isUsed: false, //? not yet, set true by opcode/assembler
                 });
             }
