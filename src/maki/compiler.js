@@ -1422,7 +1422,7 @@ function transformer(ast) {
                 // const ir = generateIR(node.expect, irSolver)
                 // irFun(...ir)
                 // console.warn('if:', ir)
-                irFun(`//IF () `)
+                irFun(`; //IF () `)
             },
             
             neck(node,parent){

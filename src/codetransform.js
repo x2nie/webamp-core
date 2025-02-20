@@ -222,6 +222,7 @@ Int versionCheck()
 import std_mi from "./std_mi_566";
 import { BinTree } from "./hexedit";
 import MakiWriter from "./maki/MakiFileWriter";
+import { OPCODES } from "./maki/constants";
 
 const song_stopper_m = `
 #include <lib/std.mi>
@@ -368,7 +369,7 @@ class Root extends Component {
         ast.registry.forEach(reg => f.writeGUID(reg.key))
 
         //? method
-        f.writeUint32LE(ast.methods.length); // Version
+        f.writeUint32LE(ast.methods.length); // 
         ast.methods.forEach(fun => {
             f.writeUint8(fun.classOffset)
             f.writeUint8(1)     //? always 1
@@ -377,7 +378,7 @@ class Root extends Component {
         })
         
         //? variables
-        f.writeUint32LE(ast.variables.length); // Version
+        f.writeUint32LE(ast.variables.length); // 
         ast.variables.forEach(variable => {
             const isObject = variable.classIndex && variable.classIndex >=0;
             const typeOffset = isObject? variable.classIndex : PRIMITIVE_TYPES[variable.type.toUpperCase()] || 255;
@@ -396,19 +397,45 @@ class Root extends Component {
                 
         //? resource-string
         const res = ast.variables.filter(v => v.type == 'string')
-        f.writeUint32LE(res.length); // Version
+        f.writeUint32LE(res.length); // 
         res.forEach(r => {
             f.writeUint16LE(r.offset)     //? var.offset 
             f.writePascalString(r.value || '' )
         })
 
         //? bindings
-        f.writeUint32LE(ast.bindings.length); // Version
+        f.writeUint32LE(ast.bindings.length); // 
         ast.bindings.forEach(event => {
             f.writeUint32LE(event.variableIndex)
             f.writeUint32LE(event.methodIndex)
             // const fun = ast.methods[event.methodIndex]
             f.writeUint32LE(event.binaryOffset)
+        })
+        
+        //? bytecodes
+        const lastProc = ast.procedures[ast.procedures.length-1]
+        const codeBytes = lastProc.end
+        f.writeUint32LE(codeBytes); // in bytes, not the count
+        ast.procedures.forEach(proc => {
+            proc.ir.forEach(assembler => {
+                if(assembler.startsWith(';')) return;
+
+                const [opcode, val, val2, ..._] = assembler.split(' ')
+                const COMMAND = OPCODES[opcode]
+                if(!COMMAND){
+                    throw new Error(`Invalid opcode :"${opcode}" of "${assembler}"`);
+                }
+                // const len = Number(COMMAND.bytes)
+                const {bytes, code} = COMMAND
+                f.writeUint8(code);
+                if(bytes > 1){
+                    f.writeUint32LE(Number(val));
+                }
+
+                if(bytes > 5){
+                    f.writeUint8(Number(val2)||255);
+                }
+            })
         })
         
         
