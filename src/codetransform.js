@@ -401,6 +401,16 @@ class Root extends Component {
             f.writeUint16LE(r.offset)     //? var.offset 
             f.writePascalString(r.value || '' )
         })
+
+        //? bindings
+        f.writeUint32LE(ast.bindings.length); // Version
+        ast.bindings.forEach(event => {
+            f.writeUint32LE(event.variableIndex)
+            f.writeUint32LE(event.methodIndex)
+            // const fun = ast.methods[event.methodIndex]
+            f.writeUint32LE(event.binaryOffset)
+        })
+        
         
         // debugger
         this.binary.binary = f.getData()

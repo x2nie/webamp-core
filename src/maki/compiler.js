@@ -958,7 +958,7 @@ function transformer(ast) {
         userfuncs: [],  //? user-functions. will be anonymous-function
         procedures: [], //? byte code of function (userfunc + events)
         methods: [],    //? api-functions; name is visible in maki
-        bindngs: [],
+        bindings: [],
         strings: [],    //? string for default value
         registry: [],
         variables: [],  //? final varaibles, used by VM
@@ -982,7 +982,7 @@ function transformer(ast) {
     ast._userfuncs = newAst.userfuncs;
     ast._defined = newAst.defined;
     ast._variables = newAst.variables;
-    ast._bindngs = newAst.bindngs;
+    ast._bindings = newAst.bindings;
     ast._externals = newAst.externals;
     ast._procedures = newAst.procedures;
     ast._strings = newAst.strings;
@@ -1365,7 +1365,7 @@ function transformer(ast) {
                     
                     //let say commands has been generated
                     // //? binding
-                    // ast._bindngs.push({
+                    // ast._bindings.push({
                     //     variableIndex,
                     //     methodIndex: ast._methods.length -1,
                     //     binaryOffset: -1,
@@ -1398,7 +1398,7 @@ function transformer(ast) {
                 if(!node.uf){
                     //? binding. set it after assembler, as shown in usual maki's methods order
                     const {className, methodName, variableIndex, methodIndex} = node;
-                    ast._bindngs.push({
+                    ast._bindings.push({
                         variableIndex,
                         methodIndex,
                         binaryOffset: theFun.start,
@@ -1560,7 +1560,7 @@ function transformer(ast) {
                     
                     //let say commands has been generated
                     // //? binding
-                    // ast._bindngs.push({
+                    // ast._bindings.push({
                     //     variableIndex,
                     //     methodIndex: ast._methods.length -1,
                     //     binaryOffset: -1,
