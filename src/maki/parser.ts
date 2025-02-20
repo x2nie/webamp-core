@@ -510,6 +510,7 @@ class MakiParser {
 
       bindings.push({ variableOffset, binaryOffset, methodOffset });
       const aclass = variables[variableOffset];
+      if(!aclass) debugger
       // @ts-ignore
       if (!aclass.events) {aclass.events = [];}
       // @ts-ignore

@@ -1049,6 +1049,12 @@ function transformer(ast) {
             isUsed: true,
             offset:  ast._variables.length,
         }
+        if(node.type=='number' || node.type=='NumberLiteral'){
+            if(node.value.includes('.'))
+                node.type = 'int'
+            else
+                node.type = 'float'
+        }
         ast._variables.push(node)
         // node.offset = ast._variables.length -1;
         return node
@@ -1074,7 +1080,7 @@ function transformer(ast) {
         if(!theVar){
             theVar = ast._defined.find(cls => cls.NAME == varName.toUpperCase())
             if(theVar){
-                theVar.type = theVar.value? theVar.value.type : null
+                theVar.type = theVar.value? theVar.value.type : null;
                 theVar.value = theVar.value? theVar.value.value: null;
                 setVariable(theVar)
             }
@@ -1082,6 +1088,12 @@ function transformer(ast) {
         if(!theVar){
             theVar = setVariable({name:`$${varName}`, ...props, })
         }
+        // if(theVar.type=='number' || theVar.type=='NumberLiteral'){
+        //     if(theVar.value.includes('.'))
+        //         theVar.type = 'int'
+        //     else
+        //         theVar.type = 'float'
+        // }
         return theVar
     }
 
@@ -1145,6 +1157,7 @@ function transformer(ast) {
                 if(node.name == '.CODE'){
                     ast._variables.push({
                         isGlobal: true,
+                        type: 'System',
                         name: 'System',
                         NAME: 'SYSTEM',
                         isObject: 1,
@@ -1240,16 +1253,27 @@ function transformer(ast) {
                     offset = theFun.vars[node.name].offset
                 } else {
                     theFun.vars[node.name] = node;
-                    ast._variables.push({
+                    // ast._variables.push({
+                    //     ...node,
+                    //     // name: node.name,
+                    //     NAME: node.name.toUpperCase(),
+                    //     // node: node,
+                    //     type: node.varType || node.type,
+                    //     isUsed: true,
+                    // })
+                    // offset = ast._variables.length -1;
+                    
+                    
+                    const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
+                    const node2 = setVariable({
                         ...node,
-                        // name: node.name,
-                        NAME: node.name.toUpperCase(),
-                        // node: node,
-                        type: node.varType || node.type,
-                        isUsed: true,
+                        isObject: classIndex >= 0,
+                        classIndex,
+                        name: node.name,
+                        isGlobal: false,
+                        isUsed: true, //? signal for global = always included in .maki
                     })
-                    offset = ast._variables.length -1;
-                    node.offset = offset
+                    node.offset = node2.offset
                 }
                 // return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
                 irFun(`PUSH ${offset} LOCALVAR`)
@@ -1345,23 +1369,31 @@ function transformer(ast) {
                 } 
 
                 if(!uf){
+                    const method = getMethod(methodName, className)
+                    node.methodIndex = method.offset
+                    // let {className, methodName} = method;
+                    // className = node.className= method.className;
+                    methodName = node.methodName= method.methodName;
                     //? non user-function, has to register
                     const CLASSNAME = className.toUpperCase()
-                    let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
-                    const variable = ast._variables.find(v => v.NAME == CLASSNAME)
+                    // let obj = ast._registry.find(cls => cls.ALIAS == CLASSNAME)
+                    // const variable = ast._variables.find(v => v.NAME == CLASSNAME)
+                    // // debugger
+                    // node.variableIndex = ast._variables.indexOf(variable)
+                    node.variableIndex = ast._variables.findIndex(v => v.NAME == CLASSNAME)
+                    // if(obj == null){
+                    //     obj = ast._registry.find(cls => cls.alias == variable.type)
+                    // }
+                    // let classIndex = ast._registry.indexOf(obj)
                     // debugger
-                    node.variableIndex = ast._variables.indexOf(variable)
-                    if(obj == null){
-                        obj = ast._registry.find(cls => cls.alias == variable.type)
-                    }
-                    let classIndex = ast._registry.indexOf(obj)
-                    node.classIndex = classIndex
-                    node.methodIndex = ast._methods.length;
+                    node.classOffset = method.classOffset
+                    // node.methodIndex = ast._methods.length;
                     //? method
-                    ast._methods.push({
-                        classIndex,
-                        string: methodName,
-                    });
+                    // ast._methods.push({
+                    //     classIndex,
+                    //     classOffset: classIndex,
+                    //     string: methodName,
+                    // });
                     
                     //let say commands has been generated
                     // //? binding
@@ -1397,8 +1429,9 @@ function transformer(ast) {
             exit(node, parent) {
                 if(!node.uf){
                     //? binding. set it after assembler, as shown in usual maki's methods order
-                    const {className, methodName, variableIndex, methodIndex} = node;
+                    const {className, methodName, variableIndex, methodIndex, name} = node;
                     ast._bindings.push({
+                        name,
                         variableIndex,
                         methodIndex,
                         binaryOffset: theFun.start,

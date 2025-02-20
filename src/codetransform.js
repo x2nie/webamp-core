@@ -381,14 +381,34 @@ class Root extends Component {
         f.writeUint32LE(ast.variables.length); // 
         ast.variables.forEach(variable => {
             const isObject = variable.classIndex && variable.classIndex >=0;
+            if(!variable.type){
+                console.warn('var ha no type:',variable)
+            }
             const typeOffset = isObject? variable.classIndex : PRIMITIVE_TYPES[variable.type.toUpperCase()] || 255;
+            if(typeOffset==255){
+                console.warn('unknown typeOffset:',variable.type, variable)
+            }
             f.writeUint8(typeOffset)
             f.writeUint8(isObject? 1 : 0)
             //TODO:
             f.writeUint16LE(0)     //? isSubclass 
-
-            f.writeUint16LE(0)     //? uinit1 
-            f.writeUint16LE(0)     //? uinit2 
+            let uinit1 = 0;
+            let uinit2 = 0;
+            if(!isObject){
+                const n = Number(variable.value)
+                switch (variable.type.toLowerCase()) {
+                    case 'float':
+                    case 'double':
+                    case 'int':
+                        uinit1 = n
+                        break;
+                
+                    default:
+                        break;
+                }
+            }
+            f.writeUint16LE(uinit1)     //? uinit1 
+            f.writeUint16LE(uinit2)     //? uinit2 
             f.writeUint16LE(0)     //? UNKNOWN 1 
             f.writeUint16LE(0)     //? UNKNOWN 2 
             f.writeUint8(variable.isGlobal? 1 : 0)      //? Global
@@ -399,7 +419,7 @@ class Root extends Component {
         const res = ast.variables.filter(v => v.type == 'string')
         f.writeUint32LE(res.length); // 
         res.forEach(r => {
-            f.writeUint16LE(r.offset)     //? var.offset 
+            f.writeUint32LE(r.offset)     //? var.offset 
             f.writePascalString(r.value || '' )
         })
 
