@@ -1090,12 +1090,30 @@ function transformer(ast) {
     }
 
     function getMethod(methodName, className) {
+        //? called by CallExpression.exit()
         const METHODNAME = methodName.toUpperCase()
-        let method = ast._methods.find(m => m.NAME == METHODNAME)
+        const CLASSNAME = className.toUpperCase()
+        let method = ast._methods.find(m => m.NAME == METHODNAME & m.CLASSNAME==CLASSNAME)
         if(!method){
-            method = ast._externals.find(m => m.NAME == METHODNAME)
+            method = ast._externals.find(m => m.NAME == METHODNAME & m.CLASSNAME==CLASSNAME)
             if(method){
                 method.offset = ast._methods.length
+                method.classOffset = ast._registry.findIndex(reg => reg.ALIAS == CLASSNAME)
+                ast._methods.push(method)
+            }
+            else {
+                const variable = ast._variables.find(v => v.NAME == CLASSNAME)
+                if(variable){
+                    className = variable.type;
+                    method = getMethod(methodName, className)
+                }
+            }
+        }
+        if(!method){ //! TEMPORARY
+            method = ast._externals.find(m => m.NAME == METHODNAME /* & m.CLASSNAME==CLASSNAME */)
+            if(method){
+                method.offset = ast._methods.length
+                method.classOffset = ast._registry.findIndex(reg => reg.ALIAS == CLASSNAME)
                 ast._methods.push(method)
             }
         }
@@ -1181,8 +1199,11 @@ function transformer(ast) {
         GlobalDeclaration: {
             enter(node, parent) {
                 node.declarations.forEach(d =>{
+                    const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == d.value.toUpperCase())
                     setVariable({
                         ...node,
+                        isObject: classIndex >= 0,
+                        classIndex,
                         name: d.value,
                         isGlobal: true,
                         isUsed: true, //? signal for global = always included in .maki
@@ -1278,7 +1299,7 @@ function transformer(ast) {
                 // node.pop('type')
                 const {type, name, ...method} = node
                 const [className, methodName] = name.split('.')
-            ast._externals.push({className, methodName, NAME: methodName.toUpperCase(), ...method});
+            ast._externals.push({className, CLASSNAME: className.toUpperCase(), methodName, NAME: methodName.toUpperCase(), ...method});
             },
         },
 
@@ -1491,6 +1512,7 @@ function transformer(ast) {
                 node.uf = uf!=null;
 
                 if(!uf){
+
                     //? non user-function, find class.varOffset
                     let variable = getVariable(className)
                     if(!variable || variable.offset==null){
@@ -1506,7 +1528,6 @@ function transformer(ast) {
                     const {methodName, className} = node
                     let method = getMethod(methodName, className)
                     if(!method || method.offset==null){
-                        //TODO: ast._methods.push()
                         debugger
                         // variable =
                     }

@@ -221,6 +221,7 @@ Int versionCheck()
 `;
 import std_mi from "./std_mi_566";
 import { BinTree } from "./hexedit";
+import MakiWriter from "./maki/MakiFileWriter";
 
 const song_stopper_m = `
 #include <lib/std.mi>
@@ -298,7 +299,7 @@ class Root extends Component {
         </div>
         <div><h3>Token</h3><pre id="token"></pre></div>
         <div><h3>AST </h3><pre id="parsed"></pre></div>
-        <div><h3>Transformed</h3><pre id="transformed"></pre></div>
+        <div><h3>Transformed <span t-on-click="generateBinary"> download </span> </h3><pre id="transformed"></pre></div>
         <div><h3>Variables</h3><pre id="variables"></pre></div>
         <!-- <div><h3>Processed</h3><pre id="processed"></pre></div> -->
         <!-- <div><h3>Generated</h3><pre id="generated"></pre></div> -->
@@ -353,6 +354,27 @@ class Root extends Component {
         const ast = parser(tokens.filter(tk => tk != null & tk.type != 'comment')); document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
         const ast2 = transformer(ast); document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2);
         document.getElementById('variables').innerText = JSON.stringify(ast2.variables, null, 2)
+        this.buildMaki(ast2);
+    }
+
+    buildMaki(ast){
+        const f = new MakiWriter()
+        f.writeUint16(0x4647) // FG
+        f.writeUint16(0x0304) // Version
+        f.writeUint32LE(0x17); // Version
+
+        //? class registry
+        f.writeUint32LE(ast.registry.length); // Version
+        ast.registry.forEach(reg => f.writeGUID(reg.key))
+
+        //? method
+        f.writeUint32LE(ast.methods.length); // Version
+        ast.registry.forEach(fun => {
+            f.writePascalString(fun.methodName)
+        })
+        
+        // debugger
+        this.binary.binary = f.getData()
     }
 
     async loadMaki(makiPath) {
@@ -373,10 +395,25 @@ class Root extends Component {
             console.log(parsedScriptXp)
         }
     }
+
+    generateBinary(){
+        if(!this.binary.binary) return;
+
+        const path = this.state.file.split('/');
+        const filename = path[path.length-1] + '.maki'
+        const blob = new Blob([this.binary.binary], { type: "application/octet-stream" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
 }
 
 const env = {
     binary: reactive({
+        binary: null,
         code: '',       //? source code
         data: [],
         blocks: [],
