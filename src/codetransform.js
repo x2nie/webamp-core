@@ -369,7 +369,10 @@ class Root extends Component {
 
         //? method
         f.writeUint32LE(ast.methods.length); // Version
-        ast.registry.forEach(fun => {
+        ast.methods.forEach(fun => {
+            f.writeUint8(fun.classOffset)
+            f.writeUint8(1)     //? always 1
+            f.writeUint16(0)    //? unknown
             f.writePascalString(fun.methodName)
         })
         

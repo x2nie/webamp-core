@@ -57,9 +57,10 @@ export default class MakiWriter {
 
     writePascalString(s: string) {
         const bytes = new TextEncoder().encode(s);
-        this.ensureCapacity(1 + bytes.length);
-        this.view.setUint8(this.offset, bytes.length);
-        this.offset += 1;
+        this.ensureCapacity(2 + bytes.length);
+        // this.view.setUint8(this.offset, bytes.length);
+        this.view.setUint16(this.offset, bytes.length, true); // Little-endian
+        this.offset += 2;
         this.buffer.set(bytes, this.offset);
         this.offset += bytes.length;
     }
