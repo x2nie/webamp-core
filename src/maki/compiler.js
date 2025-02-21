@@ -1249,6 +1249,7 @@ function transformer(ast) {
             // We'll visit them on enter.
             enter(node, parent) {
                 let offset
+                // debugger
                 if(node.name in theFun.vars){
                     offset = theFun.vars[node.name].offset
                 } else {
@@ -1274,6 +1275,7 @@ function transformer(ast) {
                         isUsed: true, //? signal for global = always included in .maki
                     })
                     node.offset = node2.offset
+                    offset = node.offset
                 }
                 // return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
                 irFun(`PUSH ${offset} LOCALVAR`)
