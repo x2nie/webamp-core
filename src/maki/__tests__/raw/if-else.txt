@@ -1,0 +1,132 @@
+//songinfo.m +debug.sym
+
+if (sit != "") 
+    getSonginfo(sit);
+else 
+    songInfoTimer.setDelay(250); // goes to 250ms once info is available
+songInfoTimer.start();
+
+if (sit != "") 
+        #535⯈ PUSH 31
+        #540⯈ PUSH 15
+        #545⯈ NEQ
+        #546⯈ JUMPIF 16 (raw) | adjusted: 567
+
+    getSonginfo(sit);
+        #551⯈ PUSH 31
+        #556⯈ USERFUNCCALL 1794 (raw) | adjusted: 2355
+        #561⯈ POP
+        #562⯈ JUMP 17 (raw) | adjusted: 584
+
+else 
+    songInfoTimer.setDelay(250); // goes to 250ms once info is available
+        #567⯈ PUSH 23
+        #572⯈ PUSH 30
+        #577⯈ STRANGECALL 10
+        #583⯈ POP
+
+songInfoTimer.start();
+        #584⯈ PUSH 23
+        #589⯈ STRANGECALL 13
+        #595⯈ POP
+        
+
+---------------------------        
+System.onScriptLoaded(){
+    ...
+	songInfoTimer.setDelay(250);
+
+	if (getStatus() == STATUS_PLAYING) {
+		String sit = getSongInfoText();
+		waaaRetries = 0;
+		if (sit != "") getSonginfo(sit);
+		else songInfoTimer.setDelay(250); // goes to 250ms once info is available
+		songInfoTimer.start();
+	} else if (getStatus() == STATUS_PAUSED) {
+		getSonginfo(getSongInfoText());
+	}
+}
+
+System.onScriptLoaded(){
+            __5 #351⯈ USERFUNCCALL -356 (raw) | adjusted: 0
+            __5 #356⯈ JUMPIFNOT 6 (raw) | adjusted: 367
+            __5 #361⯈ PUSH 1
+            __1 #366⯈ RET
+    ...
+
+	songInfoTimer.setDelay(250);
+
+            __5 #466⯈ PUSH 23
+            __5 #471⯈ PUSH 30
+            __6 #476⯈ STRANGECALL 10
+            __1 #482⯈ POP
+
+    if (getStatus() == STATUS_PLAYING) {
+            __5 #483⯈ PUSH 0
+            __6 #488⯈ STRANGECALL 11
+            __5 #494⯈ PUSH 6
+            __1 #499⯈ EQ
+            __5 #500⯈ JUMPIF 96 (raw) | adjusted: 601
+
+        String sit = getSongInfoText();
+            __5 #505⯈ PUSH 31
+            __5 #510⯈ PUSH 0
+            __6 #515⯈ STRANGECALL 12
+            __1 #521⯈ MOV
+            __1 #522⯈ POP
+
+        waaaRetries = 0;
+            __5 #523⯈ PUSH 26
+            __5 #528⯈ PUSH 8
+            __1 #533⯈ MOV
+            __1 #534⯈ POP
+
+        if (sit != "") getSonginfo(sit);
+                __5 #535⯈ PUSH 31
+                __5 #540⯈ PUSH 15
+                __1 #545⯈ NEQ
+                __5 #546⯈ JUMPIF 16 (raw) | adjusted: 567
+
+            getSonginfo(sit);
+                __5 #551⯈ PUSH 31
+                __5 #556⯈ USERFUNCCALL 1794 (raw) | adjusted: 2355
+                __1 #561⯈ POP
+
+            ;endif
+            __5 #562⯈ JUMP 17 (raw) | adjusted: 584
+
+        else 
+            songInfoTimer.setDelay(250);
+                __5 #567⯈ PUSH 23
+                __5 #572⯈ PUSH 30
+                __6 #577⯈ STRANGECALL 10
+                __1 #583⯈ POP
+
+        songInfoTimer.start();
+            __5 #584⯈ PUSH 23
+            __6 #589⯈ STRANGECALL 13
+            __1 #595⯈ POP
+
+        ;endif
+        __5 #596⯈ JUMP 40 (raw) | adjusted: 641
+
+
+    } else if (getStatus() == STATUS_PAUSED) {
+            __5 #601⯆ PUSH 0
+            __6 #606⯈ STRANGECALL 11
+            __5 #612⯈ PUSH 6
+            __1 #617⯈ NEGATIVE
+            __1 #618⯈ EQ
+            __5 #619⯈ JUMPIF 17 (raw) | adjusted: 641
+
+        getSonginfo(getSongInfoText());
+            __5 #624⯈ PUSH 0
+            __6 #629⯈ STRANGECALL 12
+            __5 #635⯈ USERFUNCCALL 1715 (raw) | adjusted: 2355
+            __1 #640⯈ POP
+
+    }
+            __5 #641⯈ PUSH 1
+            __1 #646⯈ RET
+
+}
