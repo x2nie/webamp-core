@@ -904,6 +904,8 @@ function traverser(ast, visitor) {
                 break;
 
             case 'FunctionDeclaration':
+                methods.stackProtection(node, parent); //? Code injection
+                
                 traverseBackArray(node.parameters, node);
                 traverseArray(node.body, node);
                 break;
@@ -1425,6 +1427,18 @@ function transformer(ast) {
                 theFun = fun
 
                 //TODO: Assembler here
+            },
+
+
+            stackProtection(node, parent) {
+                //? Note: it's for winamp 5.x, it may differ for Winamp 3.x
+
+                if(node.uf) //? all apiCall only, ignore UserDefinedFunction
+                    return;
+                if(node.name.toLowerCase() == 'system.onscriptloaded'){
+                    const code = 'if(not(versionCheck())) return null;'
+                    const wrapperAst = code2ast(code)
+                }
             },
 
 
