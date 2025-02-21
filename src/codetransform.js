@@ -293,6 +293,7 @@ class Root extends Component {
                 <option value="/assets/skins/SimpleTutorial/test-script">script</option>
                 <option value="/assets/skins/WinampModernPP/scripts/songinfo">Songinfo debug.sym</option>
                 <option value="/assets/skins/CornerAmp_Redux/scripts/corner">corner</option>
+                <option value="/assets/skins/SimpleTutorial/basicTests">basicTests</option>
             </select>
             </h3>
             <pre id="code" class="half"></pre>

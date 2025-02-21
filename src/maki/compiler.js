@@ -489,7 +489,7 @@ function parser(tokens) {
                 // expect: walk(),
                 expect: buildExpressionTree(truthy.params),
                 body: [],
-                // 'else': null,
+                'else': [],
             };
             var later = walk()
             if(later.type=='CodeDomain')
@@ -499,6 +499,17 @@ function parser(tokens) {
                 node.body.push(later)
             // }
             // if(nextis('semi')) current++; //semi
+            if(next()=='else') {
+                // node.else.push( walk() )
+                node.else = walk().body //? ElseExpression
+                // debugger
+            }
+            else if(next(1)=='else') {
+                current++;
+                // node.else.push( walk() )
+                node.else = walk().body //? ElseExpression
+                // debugger
+            }
             return node
         }
         if (token.type === 'keyword' && token.value === 'else') {
@@ -594,6 +605,8 @@ function parser(tokens) {
                 // } else {
                 //     node.body.push(statement)
                 // }
+                if(!token)
+                    break
                 if(!(token.value == '}' && token.type == 'symbol')){
                     token = tokens[++current];
                 }
@@ -1438,6 +1451,7 @@ function transformer(ast) {
                 if(node.name.toLowerCase() == 'system.onscriptloaded'){
                     const code = 'if(not(versionCheck())) return null;'
                     const wrapperAst = code2ast(code)
+                    // debugger
                 }
             },
 
