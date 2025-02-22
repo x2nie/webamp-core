@@ -1690,7 +1690,7 @@ function transformer(ast) {
                 //? fixup arguments.type as in func.declaration
                 const method = getMethod(methodName, className, false);
                 if(!method || !method.arguments) debugger
-                console.log(`--calling @${node.name}`, method)
+                // console.log(`--calling @${node.name}`, method)
                 method.arguments.forEach((parameter,i) => {
                     const arg = node.arguments[i]
                     // debugger
