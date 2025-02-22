@@ -1337,37 +1337,38 @@ function transformer(ast) {
         LocalVar: {
             // We'll visit them on enter.
             enter(node, parent) {
-                let offset
-                // debugger
-                if(node.name in theFun.vars){
-                    offset = theFun.vars[node.name].offset
-                } else {
-                    theFun.vars[node.name] = node;
-                    // ast._variables.push({
-                    //     ...node,
-                    //     // name: node.name,
-                    //     NAME: node.name.toUpperCase(),
-                    //     // node: node,
-                    //     type: node.varType || node.type,
-                    //     isUsed: true,
-                    // })
-                    // offset = ast._variables.length -1;
+                const v = getVariable(node.name, node)
+                // let offset
+                // // debugger
+                // if(node.name in theFun.vars){
+                //     offset = theFun.vars[node.name].offset
+                // } else {
+                //     theFun.vars[node.name] = node;
+                //     // ast._variables.push({
+                //     //     ...node,
+                //     //     // name: node.name,
+                //     //     NAME: node.name.toUpperCase(),
+                //     //     // node: node,
+                //     //     type: node.varType || node.type,
+                //     //     isUsed: true,
+                //     // })
+                //     // offset = ast._variables.length -1;
                     
                     
-                    const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
-                    const node2 = setVariable({
-                        ...node,
-                        isObject: classIndex >= 0,
-                        classIndex,
-                        name: node.name,
-                        isGlobal: false,
-                        isUsed: true, //? signal for global = always included in .maki
-                    })
-                    node.offset = node2.offset
-                    offset = node.offset
-                }
+                //     const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
+                //     const node2 = setVariable({
+                //         ...node,
+                //         isObject: classIndex >= 0,
+                //         classIndex,
+                //         name: node.name,
+                //         isGlobal: false,
+                //         isUsed: true, //? signal for global = always included in .maki
+                //     })
+                //     node.offset = node2.offset
+                //     offset = node.offset
+                // }
                 // return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
-                irFun(`PUSH ${offset} LOCALVAR`)
+                irFun(`PUSH ${v.offset} LOCALVAR`)
             },
         },
 
