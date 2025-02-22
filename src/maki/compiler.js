@@ -617,7 +617,7 @@ function parser(tokens) {
         if (token.type === 'keyword' && token.value == 'return') {
             // token = tokens[++current]
             current++;
-            token = walk()
+            token = nextis('semi') ? {type:'identifier', value:'NULL'} : walk();
             return {
                 type: 'Return',
                 value: token,
@@ -1140,8 +1140,70 @@ function transformer(ast) {
         // node.offset = ast._variables.length -1;
         return node
     }
+    
+    function getVariable(node) {
+        let theVar = theFun.vars[node.name] //? what is this?
+        if(!theVar){
+            // if(!varName) debugger;
+            theVar = ast._variables.find(v => v.NAME == (node.name || '').toUpperCase())
+        }
+        if(!theVar) { 
+            switch (node.type) {
+                case "NumberLiteral":
+                    if(node.value.includes('.'))
+                        node.type = 'float'
+                    else
+                        node.type = 'int';
+                    theVar = ast._variables.find(v => v.literal && v.type == node.type &&  v.value == node.value)
+                    if(!theVar){
+                        theVar = setVariable({...node, name:`#${node.value}`, literal:true})
+                    }
+                    break;
+            
+                case "StringLiteral":
+                    theVar = ast._variables.find(v => v.literal && v.type == 'string' &&  v.value == node.value)
+                    if(!theVar){
+                        theVar = setVariable({...node, type: 'string', name:`#${node.value}`, literal:true})
+                        ast._strings.push(node.value) 
+                    }
+                    break;
+            
+                case "LocalVar":
+                case "Parameter":
+                    const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
+                    //? force add
+                    theVar = setVariable({...node, //type: node.varType,
+                        isObject: classIndex >= 0,
+                        classIndex,
+                    })
+                    break;
 
-    function getVariable(varName, props) {
+                case "identifier":
+                    const varName = node.name;
+                    if(!theVar){
+                        theVar = ast._registry.find(cls => cls.ALIAS == varName.toUpperCase())
+                        theVar && setVariable(theVar)
+                    }
+                    if(!theVar){
+                        theVar = ast._defined.find(cls => cls.NAME == varName.toUpperCase())
+                        if(theVar){
+                            theVar.type = theVar.value? theVar.value.type : null;
+                            theVar.value = theVar.value? theVar.value.value: null;
+                            setVariable(theVar)
+                        }
+                    }
+                    if(!theVar){
+                        theVar = setVariable({...node, })
+                    }
+                    break;
+            }  
+            
+            
+        }
+
+        return theVar
+    }
+    function getVariable0(varName, props) {
         //? special: the null
         if(!varName && props.value === 'null' && props.type=='identifier') {
             varName == 'NULL'
@@ -1337,47 +1399,47 @@ function transformer(ast) {
         LocalVar: {
             // We'll visit them on enter.
             enter(node, parent) {
-                // const v = getVariable(node.name, node)
-                let offset
-                // debugger
-                if(node.name in theFun.vars){
-                    offset = theFun.vars[node.name].offset
-                } else {
-                    theFun.vars[node.name] = node;
-                    // ast._variables.push({
-                    //     ...node,
-                    //     // name: node.name,
-                    //     NAME: node.name.toUpperCase(),
-                    //     // node: node,
-                    //     type: node.varType || node.type,
-                    //     isUsed: true,
-                    // })
-                    // offset = ast._variables.length -1;
+                const v = getVariable(node)
+                // let offset
+                // // debugger
+                // if(node.name in theFun.vars){
+                //     offset = theFun.vars[node.name].offset
+                // } else {
+                //     theFun.vars[node.name] = node;
+                //     // ast._variables.push({
+                //     //     ...node,
+                //     //     // name: node.name,
+                //     //     NAME: node.name.toUpperCase(),
+                //     //     // node: node,
+                //     //     type: node.varType || node.type,
+                //     //     isUsed: true,
+                //     // })
+                //     // offset = ast._variables.length -1;
                     
                     
-                    const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
-                    const node2 = setVariable({
-                        ...node,
-                        isObject: classIndex >= 0,
-                        classIndex,
-                        name: node.name,
-                        isGlobal: false,
-                        isUsed: true, //? signal for global = always included in .maki
-                    })
-                    // node.offset = node2.offset
-                    // offset = node.offset
-                    offset = node2.offset
-                }
+                //     const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
+                //     const node2 = setVariable({
+                //         ...node,
+                //         isObject: classIndex >= 0,
+                //         classIndex,
+                //         name: node.name,
+                //         isGlobal: false,
+                //         isUsed: true, //? signal for global = always included in .maki
+                //     })
+                //     // node.offset = node2.offset
+                //     // offset = node.offset
+                //     offset = node2.offset
+                // }
                 // return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
-                irFun(`PUSH ${offset} LOCALVAR`)
-                // irFun(`PUSH ${v.offset} LOCALVAR`)
+                // irFun(`PUSH ${offset} LOCALVAR`)
+                irFun(`PUSH ${v.offset} LOCALVAR`)
             },
         },
 
         NumberLiteral: {
             // We'll visit them on enter.
             enter(node, parent) {
-                const v = getVariable(node.value, node)
+                const v = getVariable(node)
                 // debugger
                 theFun && irFun(`PUSH ${v.offset} ${v.value}`)
 
@@ -1392,7 +1454,7 @@ function transformer(ast) {
         identifier: {
             enter(node, parent) {
                 if(theFun){
-                    const v = getVariable(node.name, node)
+                    const v = getVariable(node)
                     // debugger
                     theFun && irFun(`PUSH ${v.offset} ${v.name}`)
                 }
@@ -1402,7 +1464,8 @@ function transformer(ast) {
         // Next we have `StringLiteral`
         StringLiteral: {
             enter(node, parent) {
-                const s = getString(node.value)
+                // const s = getString(node.value)
+                const s = getVariable(node)
                 // debugger
                 theFun && irFun(`PUSH ${s.offset} ${s.name}`)
                 // parent._context.push({
@@ -1644,14 +1707,15 @@ function transformer(ast) {
             enter(node, parent) {
                 // irFun(`POPTO ${node.name}`)
                 // debugger
-                const variable = getVariable(node.name, node)
+                const variable = getVariable(node)
                 irFun(`POPTO ${variable.offset}`)
             }
         },
 
         Return: {
             enter(node, parent) {
-                let variable = getVariable(node.value.value || node.value.name, node.value)
+                // let variable = getVariable(node.value.value || node.value.name, node.value)
+                const variable = getVariable(node.value)
                 irFun(`PUSH ${variable.offset}`)
                 irFun(`RET //${node.value.value}`)
             }
@@ -1720,7 +1784,7 @@ function transformer(ast) {
                 if(!uf){
 
                     //? non user-function, find class.varOffset
-                    let variable = getVariable(className)
+                    let variable = getVariable({type:'identifier', name:className})
                     if(!variable || variable.offset==null){
                         debugger
                     }

@@ -122,3 +122,31 @@ test('if else', () => {
         }
     ])
 })
+
+
+
+test('return void', () => {
+    const ast = code2ast('if (1) return;');
+    expect(ast[0]).toEqual({
+        "type": "IfExpression",
+        "expect": {
+            "type": "Parameters",
+            "params": [
+                {
+                    "type": "NumberLiteral",
+                    "value": "1"
+                }
+            ]
+        },
+        "else": [],
+        "body": [
+            {
+                "type": "Return",
+                "value": {
+                    "type": "identifier",
+                    "value": "NULL"
+                }
+            }
+        ]
+    })
+})
