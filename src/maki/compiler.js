@@ -18,15 +18,19 @@ function tokenizer(input) {
     const LETTERS = /[a-z_]/i;
     const GUID = /[0-9\-A-Za-z ]/i;
     const KEYWORDS = 'extern global new class function for if else return'.split(' ')
-    const TWINS = ['++', '--', '&&', '||', '<<', '==', '>>', '!=']
+    const TWINS = ['++', '--', '&&', '||', '<<', '==', '>>', '!=', '<=', '>=']
 
+    let spaced = false; //? whether any space preceded the token. needed by ++|--
     while (current < input.length) {
         let char = input[current];
 
         // Skip whitespace
         if (WHITESPACE.test(char)) {
             current++;
+            spaced = true;
             continue;
+        } else {
+            spaced = false;
         }
 
         if (char === '/' && input[current + 1] == '/') {
@@ -185,7 +189,12 @@ function tokenizer(input) {
         let lastChar = char
         char = input[current];
         if(tokens[tokens.length-1].type=='symbol' && TWINS.includes(lastChar + char)){
+            if(input[current-2] == '(' || input[current-2] == ' ') spaced = true;
+
             tokens[tokens.length-1].value += char;
+            if(['++', '--'].includes(lastChar + char)){
+                tokens[tokens.length-1].type = spaced? 'preincremental' :  'postincremental';
+            }
             current++
         }
     }
@@ -293,6 +302,38 @@ function parser(tokens) {
             node.retType = retType
             return node;
         }
+
+        // Handle pre-increment (++num)
+        if (token.type === 'preincremental' /* && (nextis('number', 1) || nextis('identifier', 1)) */ ) {
+            current++; // Skip '++'
+            const value = walk(); // Get the operand (e.g., 'num')
+            return {
+                type: 'PreIncrement',
+                operator: token.value,
+                value,
+            };
+        }
+
+        // Handle post-increment (num++)
+        if (['number', 'identifier'].includes(token.type)  && nextis('postincremental', 1) ) {
+        // if (token.type === 'postincremental') {
+            // debugger
+            // const value = ast.body.pop();
+            const value = {
+                ...token,
+                type: token.type == 'number'? 'NumberLiteral' : 'identifier'
+            }
+            // debugger
+            // current += 2; // Skip 'num' and '++'
+            current++;
+            token = tokens[current++];
+            return {
+                type: 'PostIncrement',
+                operator: token.value,
+                value,
+            };
+        }
+
 
         // Handle numbers
         if (token.type === 'number') {
@@ -483,6 +524,8 @@ function parser(tokens) {
 
         if (token.type === 'keyword' && token.value === 'if') {
             current++;
+            // if(nextis('postincremental', 2)) debugger;
+            // if(nextis('preincremental', 1)) debugger;
             const truthy = walk()
             var node = {
                 type: 'IfExpression',
@@ -690,7 +733,7 @@ function parser(tokens) {
         }
 
         //throw new TypeError(`Unknown token: ${token.type}`);
-        console.log(`Unknown token: ${JSON.stringify(token)}`);
+        console.log(`Parser: Unknown token: ${JSON.stringify(token)}`);
         current++;
     }
 
@@ -883,6 +926,7 @@ function traverser(ast, visitor) {
     // `traverseNode` will accept a `node` and its `parent` node. So that it can
     // pass both to our visitor methods.
     function traverseNode(node, parent) {
+        if(!node || !node.type) debugger;
 
         // We start by testing for the existence of a method on the visitor with a
         // matching `type`.

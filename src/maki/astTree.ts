@@ -18,13 +18,14 @@ export type ASTNode =
     | { type: "NumberLiteral"; value: string };
 
 export function buildExpressionTree(params: any[]): ASTNode {
-    const ATOMS = ['identifier', 'NumberLiteral', 'StringLiteral', 'CallExpression']
+    const ATOMS = ['identifier', 'NumberLiteral', 'StringLiteral', 'CallExpression', 'PostIncrement', 'PreIncrement']
     let i = 0;
 
     function parsePrimary(): ASTNode {
         let token = params[i++];
 
         // if (token.type === "identifier" || token.type === "NumberLiteral") {
+        if(!token || !token.type) debugger
         if (ATOMS.includes(token.type)) {
             return token;
         } else if (token.value === "(") {
