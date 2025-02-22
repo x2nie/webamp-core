@@ -338,9 +338,13 @@ function parser(tokens) {
 
         if (token.type === 'symbol' && token.value === '!') {
             current++;
+            let expression = walk(); // my identifer | parameters
+            if(expression.type == 'Parameters'){
+                expression = buildExpressionTree(expression.params)
+            }
             return {
                 type: 'NotExpression',
-                value: walk(),
+                value: expression,
             }
         }
 
