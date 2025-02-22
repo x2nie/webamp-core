@@ -1116,10 +1116,10 @@ function transformer(ast) {
             num = Number(spec.bytes)
             write = true;
         }
-        irByteLen += num;
         // theFun.ir.push(opcodes)
         // theFun.ir.push(`${num}  ${opcodes}`)
-        theFun.ir.push(`${opcodes}  _${num}`)
+        theFun.ir.push(`${opcodes}  _${num} #${irByteLen}`)
+        irByteLen += num;
     }
 
     function setVariable(variable){
@@ -1132,9 +1132,9 @@ function transformer(ast) {
         }
         if(node.type=='number' || node.type=='NumberLiteral'){
             if(node.value.includes('.'))
-                node.type = 'int'
-            else
                 node.type = 'float'
+            else
+                node.type = 'int'
         }
         ast._variables.push(node)
         // node.offset = ast._variables.length -1;
@@ -1195,23 +1195,26 @@ function transformer(ast) {
         return theStr
     }
 
-    function getMethod(methodName, className) {
+    function getMethod(methodName, className='', save2methods=true) {
         //? called by CallExpression.exit()
         const METHODNAME = methodName.toUpperCase()
         const CLASSNAME = className.toUpperCase()
         let method = ast._methods.find(m => m.NAME == METHODNAME & m.CLASSNAME==CLASSNAME)
+        if(!method){ 
+            method = ast._userfuncs.find(uf => uf.NAME == METHODNAME)
+        }
         if(!method){
             method = ast._externals.find(m => m.NAME == METHODNAME & m.CLASSNAME==CLASSNAME)
             if(method){
                 method.offset = ast._methods.length
                 method.classOffset = ast._registry.findIndex(reg => reg.ALIAS == CLASSNAME)
-                ast._methods.push(method)
+                save2methods && ast._methods.push(method)
             }
             else {
                 const variable = ast._variables.find(v => v.NAME == CLASSNAME)
                 if(variable){
                     className = variable.type;
-                    method = getMethod(methodName, className)
+                    method = getMethod(methodName, className, save2methods)
                 }
             }
         }
@@ -1220,7 +1223,7 @@ function transformer(ast) {
             if(method){
                 method.offset = ast._methods.length
                 method.classOffset = ast._registry.findIndex(reg => reg.ALIAS == CLASSNAME)
-                ast._methods.push(method)
+                save2methods && ast._methods.push(method)
             }
         }
         return method
@@ -1431,7 +1434,8 @@ function transformer(ast) {
             enter(node, parent) {
                 //? used later to detect wheter a funcDec is uf or not.
                 ast._userfuncs.push({
-                    name:node.name, 
+                    // name:node.name, 
+                    ...node,
                     NAME: node.name.toUpperCase() 
                 });
             },
@@ -1520,7 +1524,7 @@ function transformer(ast) {
                 if(node.uf) //? all apiCall only, ignore UserDefinedFunction
                     return;
                 if(node.name.toLowerCase() == 'system.onscriptloaded'){
-                    debugger
+                    // debugger
                     // const code = 'if(not(versionCheck())) return null;'
                     const code = 'ifnot(versionCheck()) return null;'
                     const wrapperAst = code2ast(code)[0]
@@ -1681,6 +1685,34 @@ function transformer(ast) {
                 node.className = className
                 node.methodName = methodName
                 node.uf = uf!=null;
+
+                //? fixup arguments.type as in func.declaration
+                const method = getMethod(methodName, className, false);
+                if(!method || !method.arguments) debugger
+                console.log(`--calling @${node.name}`, method)
+                method.arguments.forEach((parameter,i) => {
+                    const arg = node.arguments[i]
+                    // debugger
+                    arg.legalType = parameter.name;
+                    switch (arg.type) {
+                        case 'identifier':
+                            getVariable(arg.name, arg)
+                            break;
+
+                        case 'NumberLiteral':
+                            getVariable(arg.value, arg)
+                            break;
+
+                        case 'CallExpression':
+                            getMethod(arg.name);
+                            break;
+                    }
+                    // if(['NumberLiteral', 'StringLiteral', 'identifier'].includes(arg.type)){
+                    //     getVariable(arg)
+                    // }
+                })
+                //? after callExpr in params are validated, now this callExpr it self are regeistered to 
+                getMethod(methodName, className, true);
 
                 if(!uf){
 
