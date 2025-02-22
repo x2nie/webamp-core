@@ -1148,7 +1148,7 @@ function transformer(ast) {
         }
         let theVar = theFun.vars[varName]
         if(!theVar && props &&  props.type == "NumberLiteral"){
-            theVar = ast._variables.find(v => /* v.literal && */ v.type == props.type && v.value == varName)
+            theVar = ast._variables.find(v => v.literal && /* v.type == props.type &&  */v.value == varName)
             if(!theVar){
                 theVar = setVariable({...props, name:`#${varName}`, literal:true})
             }
@@ -1337,38 +1337,40 @@ function transformer(ast) {
         LocalVar: {
             // We'll visit them on enter.
             enter(node, parent) {
-                const v = getVariable(node.name, node)
-                // let offset
-                // // debugger
-                // if(node.name in theFun.vars){
-                //     offset = theFun.vars[node.name].offset
-                // } else {
-                //     theFun.vars[node.name] = node;
-                //     // ast._variables.push({
-                //     //     ...node,
-                //     //     // name: node.name,
-                //     //     NAME: node.name.toUpperCase(),
-                //     //     // node: node,
-                //     //     type: node.varType || node.type,
-                //     //     isUsed: true,
-                //     // })
-                //     // offset = ast._variables.length -1;
+                // const v = getVariable(node.name, node)
+                let offset
+                // debugger
+                if(node.name in theFun.vars){
+                    offset = theFun.vars[node.name].offset
+                } else {
+                    theFun.vars[node.name] = node;
+                    // ast._variables.push({
+                    //     ...node,
+                    //     // name: node.name,
+                    //     NAME: node.name.toUpperCase(),
+                    //     // node: node,
+                    //     type: node.varType || node.type,
+                    //     isUsed: true,
+                    // })
+                    // offset = ast._variables.length -1;
                     
                     
-                //     const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
-                //     const node2 = setVariable({
-                //         ...node,
-                //         isObject: classIndex >= 0,
-                //         classIndex,
-                //         name: node.name,
-                //         isGlobal: false,
-                //         isUsed: true, //? signal for global = always included in .maki
-                //     })
-                //     node.offset = node2.offset
-                //     offset = node.offset
-                // }
+                    const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
+                    const node2 = setVariable({
+                        ...node,
+                        isObject: classIndex >= 0,
+                        classIndex,
+                        name: node.name,
+                        isGlobal: false,
+                        isUsed: true, //? signal for global = always included in .maki
+                    })
+                    // node.offset = node2.offset
+                    // offset = node.offset
+                    offset = node2.offset
+                }
                 // return `${offset}  ${JSON.stringify(node).replace(/"/gm,"'")} `
-                irFun(`PUSH ${v.offset} LOCALVAR`)
+                irFun(`PUSH ${offset} LOCALVAR`)
+                // irFun(`PUSH ${v.offset} LOCALVAR`)
             },
         },
 
@@ -1695,19 +1697,19 @@ function transformer(ast) {
                     const arg = node.arguments[i]
                     // debugger
                     arg.legalType = parameter.name;
-                    switch (arg.type) {
-                        case 'identifier':
-                            getVariable(arg.name, arg)
-                            break;
+                    // switch (arg.type) {
+                    //     case 'identifier':
+                    //         getVariable(arg.name, arg)
+                    //         break;
 
-                        case 'NumberLiteral':
-                            getVariable(arg.value, arg)
-                            break;
+                    //     case 'NumberLiteral':
+                    //         getVariable(arg.value, arg)
+                    //         break;
 
-                        case 'CallExpression':
-                            // getMethod(arg.name);
-                            break;
-                    }
+                    //     case 'CallExpression':
+                    //         // getMethod(arg.name);
+                    //         break;
+                    // }
                     // if(['NumberLiteral', 'StringLiteral', 'identifier'].includes(arg.type)){
                     //     getVariable(arg)
                     // }
