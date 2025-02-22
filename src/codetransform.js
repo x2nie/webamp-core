@@ -294,6 +294,7 @@ class Root extends Component {
                 <option value="/assets/skins/WinampModernPP/scripts/songinfo">Songinfo debug.sym</option>
                 <option value="/assets/skins/CornerAmp_Redux/scripts/corner">corner</option>
                 <option value="/assets/skins/SimpleTutorial/basicTests">basicTests</option>
+                <option value="/assets/skins/SimpleTutorial/basicTests-generated">basicTests -generated</option>
             </select>
             </h3>
             <pre id="code" class="half"></pre>
@@ -487,7 +488,7 @@ class Root extends Component {
         if(!this.binary.binary) return;
 
         const path = this.state.file.split('/');
-        const filename = path[path.length-1] + '.maki'
+        const filename = path[path.length-1] + '-generated.maki'
         const blob = new Blob([this.binary.binary], { type: "application/octet-stream" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);

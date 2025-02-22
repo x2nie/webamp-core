@@ -12,8 +12,8 @@
 
 export type ASTNode =
     | { type: "IfExpression"; expect: ASTNode; body: ASTNode[] }
-    | { type: "BinaryExpr"; operator: string; left: ASTNode; right: ASTNode }
-    | { type: "UnaryExpr"; operator: string; expr: ASTNode }
+    | { type: "BinaryExpression"; operator: string; left: ASTNode; right: ASTNode }
+    | { type: "UnaryExpr"; operator: string; value: ASTNode }
     | { type: "identifier"; name: string }
     | { type: "NumberLiteral"; value: string };
 
@@ -41,7 +41,7 @@ export function buildExpressionTree(params: any[]): ASTNode {
         } else if (token.value === "-" || token.value === "!") {
             let operator = token.value;
             let expr = parsePrimary();
-            return { type: "UnaryExpr", operator, expr };
+            return { type: "UnaryExpr", operator, value:expr };
         }
 
         // throw new Error("Unexpected token: " + JSON.stringify(token));
@@ -53,7 +53,7 @@ export function buildExpressionTree(params: any[]): ASTNode {
         while (i < params.length && ["*", "/", "%"].includes(params[i].value)) {
             let operator = params[i++].value;
             let right = parsePrimary();
-            left = { type: "BinaryExpr", operator, left, right };
+            left = { type: "BinaryExpression", operator, left, right };
         }
         return left;
     }
@@ -63,7 +63,7 @@ export function buildExpressionTree(params: any[]): ASTNode {
         while (i < params.length && ["+", "-"].includes(params[i].value)) {
             let operator = params[i++].value;
             let right = parseMultiplicative();
-            left = { type: "BinaryExpr", operator, left, right };
+            left = { type: "BinaryExpression", operator, left, right };
         }
         return left;
     }
@@ -73,7 +73,7 @@ export function buildExpressionTree(params: any[]): ASTNode {
         while (i < params.length && ["<", "<=", ">", ">="].includes(params[i].value)) {
             let operator = params[i++].value;
             let right = parseAdditive();
-            left = { type: "BinaryExpr", operator, left, right };
+            left = { type: "BinaryExpression", operator, left, right };
         }
         return left;
     }
@@ -83,7 +83,7 @@ export function buildExpressionTree(params: any[]): ASTNode {
         while (i < params.length && ["==", "!="].includes(params[i].value)) {
             let operator = params[i++].value;
             let right = parseRelational();
-            left = { type: "BinaryExpr", operator, left, right };
+            left = { type: "BinaryExpression", operator, left, right };
         }
         return left;
     }
@@ -93,7 +93,7 @@ export function buildExpressionTree(params: any[]): ASTNode {
         while (i < params.length && params[i].value === "&&") {
             let operator = params[i++].value;
             let right = parseEquality();
-            left = { type: "BinaryExpr", operator, left, right };
+            left = { type: "BinaryExpression", operator, left, right };
         }
         return left;
     }
@@ -103,7 +103,7 @@ export function buildExpressionTree(params: any[]): ASTNode {
         while (i < params.length && params[i].value === "||") {
             let operator = params[i++].value;
             let right = parseLogicalAnd();
-            left = { type: "BinaryExpr", operator, left, right };
+            left = { type: "BinaryExpression", operator, left, right };
         }
         return left;
     }

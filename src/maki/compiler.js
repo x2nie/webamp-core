@@ -17,7 +17,7 @@ function tokenizer(input) {
     const NUMBERS = /[0-9]/;
     const LETTERS = /[a-z_]/i;
     const GUID = /[0-9\-A-Za-z ]/i;
-    const KEYWORDS = 'extern global new class function for if else return'.split(' ')
+    const KEYWORDS = 'extern global new class function for if ifnot else return'.split(' ')
     const TWINS = ['++', '--', '&&', '||', '<<', '==', '>>', '!=', '<=', '>=']
 
     let spaced = false; //? whether any space preceded the token. needed by ++|--
@@ -344,6 +344,7 @@ function parser(tokens) {
             }
             return {
                 type: 'NotExpression',
+                operator: token.value,
                 value: expression,
             }
         }
@@ -536,13 +537,14 @@ function parser(tokens) {
             };
         }
 
-        if (token.type === 'keyword' && token.value === 'if') {
+        if (token.type === 'keyword' && (token.value === 'if' || token.value == 'ifnot')) {
             current++;
             // if(nextis('postincremental', 2)) debugger;
             // if(nextis('preincremental', 1)) debugger;
             const truthy = walk()
             var node = {
                 type: 'IfExpression',
+                ifnot: token.value == 'ifnot'? true: undefined,
                 // expect: walk(),
                 expect: buildExpressionTree(truthy.params),
                 body: [],
@@ -975,16 +977,21 @@ function traverser(ast, visitor) {
                 break;
 
             case 'FunctionDeclaration':
+                traverseBackArray(node.parameters, node);
                 methods.stackProtection(node, parent); //? Code injection
                 
-                traverseBackArray(node.parameters, node);
                 traverseArray(node.body, node);
                 break;
 
-            case 'BinaryExpr':
+            case 'BinaryExpression':
             case 'Assignment':
                 traverseNode(node.left, node);
                 traverseNode(node.right, node);
+                break;
+
+            case 'UnaryExpr':
+            case 'NotExpression':
+                traverseNode(node.value, node);
                 break;
 
             // Next we do the same with `CallExpression` and traverse their `params`.
@@ -1028,6 +1035,7 @@ function transformer(ast) {
     let newAst = {
         type: 'Program',
         stackprot: false, //? it maybe changed in between
+        verChecked: false,//? indicate that __deprecated_runtime has been validated
         userfuncs: [],  //? user-functions. will be anonymous-function
         procedures: [], //? byte code of function (userfunc + events)
         methods: [],    //? api-functions; name is visible in maki
@@ -1134,6 +1142,10 @@ function transformer(ast) {
     }
 
     function getVariable(varName, props) {
+        //? special: the null
+        if(!varName && props.value === 'null' && props.type=='identifier') {
+            varName == 'NULL'
+        }
         let theVar = theFun.vars[varName]
         if(!theVar && props &&  props.type == "NumberLiteral"){
             theVar = ast._variables.find(v => /* v.literal && */ v.type == props.type && v.value == varName)
@@ -1143,6 +1155,7 @@ function transformer(ast) {
             // theVar && setVariable(theVar)
         }
         if(!theVar){
+            if(!varName) debugger;
             theVar = ast._variables.find(v => v.NAME == varName.toUpperCase())
             // theVar && setVariable(theVar)
         }
@@ -1507,9 +1520,19 @@ function transformer(ast) {
                 if(node.uf) //? all apiCall only, ignore UserDefinedFunction
                     return;
                 if(node.name.toLowerCase() == 'system.onscriptloaded'){
-                    const code = 'if(not(versionCheck())) return null;'
-                    const wrapperAst = code2ast(code)
-                    // debugger
+                    debugger
+                    // const code = 'if(not(versionCheck())) return null;'
+                    const code = 'ifnot(versionCheck()) return null;'
+                    const wrapperAst = code2ast(code)[0]
+                    node.body.splice(0,0,wrapperAst);
+                    newAst.verChecked = true;
+                } else {
+                    if(newAst.verChecked) {
+                        const code = 'if(__deprecated_runtime) return null;'
+                        const wrapperAst = code2ast(code)[0]
+                        node.body.splice(0,0,wrapperAst);
+                        newAst.verChecked = true;    
+                    }
                 }
             },
 
@@ -1557,7 +1580,7 @@ function transformer(ast) {
                 const mark = ifStacks.pop()
                 const finish = irByteLen - mark.start 
                 // debugger
-                theFun.ir[mark.pos] = `JUMPIF ${finish} `
+                theFun.ir[mark.pos] = node.ifnot?  `JUMPIFNOT ${finish} `: `JUMPIF ${finish} `;
             }
         },
 
@@ -1582,7 +1605,7 @@ function transformer(ast) {
             }
         },
 
-        BinaryExpr:{
+        BinaryExpression:{
             exit(node,parent){
                 const opMap = {
                     "+": "ADD", "-": "SUB",
@@ -1592,6 +1615,21 @@ function transformer(ast) {
                     "&&": "LOGAND", "||": "LOGOR"
                 };
                 irFun(opMap[node.operator])
+            }
+        },
+
+        UnaryExpr: {
+            exit(node,parent){
+                const opMap = {
+                    "!": "NOT", 
+                    "-": "NEGATIVE",
+                };
+                irFun(opMap[node.operator])
+            }
+        },
+        NotExpression: {
+            exit(node,parent){
+                irFun('NOT')
             }
         },
 
@@ -1606,7 +1644,7 @@ function transformer(ast) {
 
         Return: {
             enter(node, parent) {
-                let variable = getVariable(node.value.value, node.value)
+                let variable = getVariable(node.value.value || node.value.name, node.value)
                 irFun(`PUSH ${variable.offset}`)
                 irFun(`RET //${node.value.value}`)
             }

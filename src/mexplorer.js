@@ -144,6 +144,7 @@ class Root extends Component {
         <option value="/assets/skins/WinampModernPP/scripts/songinfo">Songinfo debug.sym</option>
         <option value="/assets/skins/CornerAmp_Redux/scripts/corner">corner</option>
         <option value="/assets/skins/SimpleTutorial/basicTests">basicTests</option>
+        <option value="/assets/skins/SimpleTutorial/basicTests-generated">basicTests -generated</option>
       </select>
     </div>
     <div class="body">
