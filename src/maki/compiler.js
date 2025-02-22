@@ -303,6 +303,8 @@ function parser(tokens) {
             return node;
         }
 
+        //? UNARY
+
         // Handle pre-increment (++num)
         if (token.type === 'preincremental' /* && (nextis('number', 1) || nextis('identifier', 1)) */ ) {
             current++; // Skip '++'
@@ -332,6 +334,14 @@ function parser(tokens) {
                 operator: token.value,
                 value,
             };
+        }
+
+        if (token.type === 'symbol' && token.value === '!') {
+            current++;
+            return {
+                type: 'NotExpression',
+                value: walk(),
+            }
         }
 
 

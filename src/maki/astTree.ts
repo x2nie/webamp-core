@@ -18,7 +18,10 @@ export type ASTNode =
     | { type: "NumberLiteral"; value: string };
 
 export function buildExpressionTree(params: any[]): ASTNode {
-    const ATOMS = ['identifier', 'NumberLiteral', 'StringLiteral', 'CallExpression', 'PostIncrement', 'PreIncrement']
+    const ATOMS = ['identifier', 'NumberLiteral', 'StringLiteral', 
+        'CallExpression', 'PostIncrement', 'PreIncrement',
+        'NotExpression',
+    ]
     let i = 0;
 
     function parsePrimary(): ASTNode {
@@ -42,7 +45,7 @@ export function buildExpressionTree(params: any[]): ASTNode {
         }
 
         // throw new Error("Unexpected token: " + JSON.stringify(token));
-        console.warn("Unexpected token: " + JSON.stringify(token));
+        console.warn("AstTree: Unexpected token: " + JSON.stringify(token));
     }
 
     function parseMultiplicative(): ASTNode {
