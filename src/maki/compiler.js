@@ -1704,7 +1704,7 @@ function transformer(ast) {
                             break;
 
                         case 'CallExpression':
-                            getMethod(arg.name);
+                            // getMethod(arg.name);
                             break;
                     }
                     // if(['NumberLiteral', 'StringLiteral', 'identifier'].includes(arg.type)){
@@ -1712,7 +1712,7 @@ function transformer(ast) {
                     // }
                 })
                 //? after callExpr in params are validated, now this callExpr it self are regeistered to 
-                getMethod(methodName, className, true);
+                // getMethod(methodName, className, true);
 
                 if(!uf){
 
