@@ -1,5 +1,8 @@
 import { Component, mount, reactive, useEffect, useState, xml } from "@odoo/owl";
 import { tokenizer, parser, transformer, hideComments } from "./maki/compiler";
+import { parse as parseMaki1 } from "./maki/parser";
+
+import './hexedit.css'
 
 let input = `
 // /*
@@ -306,7 +309,9 @@ class Root extends Component {
         <div><h3>Variables</h3><pre id="variables"></pre></div>
         <!-- <div><h3>Processed</h3><pre id="processed"></pre></div> -->
         <!-- <div><h3>Generated</h3><pre id="generated"></pre></div> -->
-        <BinTree/>
+        <div>
+             <BinTree/>
+        </div>
       </div>
       `;
     static components = { BinTree };
@@ -462,7 +467,10 @@ class Root extends Component {
         
         
         // debugger
-        this.binary.binary = f.getData()
+        this.binary.data = f.getData()
+        const parsedScriptXp = parseMaki1(this.binary.data.buffer);
+        // explore(parsedScriptXp, parsedScript1);
+        this.binary.blocks = parsedScriptXp.blocks
     }
 
     async loadMaki(makiPath) {

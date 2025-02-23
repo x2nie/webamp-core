@@ -1,5 +1,7 @@
 import { Component, xml, useState, markup } from "@odoo/owl";
 
+// import './hexedit.css'
+
 export class HexEdit extends Component {
   static template = xml`<div class="hexedit">
     <div class="offset">
@@ -97,7 +99,7 @@ export class HexEdit extends Component {
 
 
 export class BinTree extends Component {
-  static template = xml`<div>
+  static template = xml`<div class="bintree">
       Bintree
       <t t-foreach="binary.blocks" t-as="block" t-key="block_index">
         <div t-attf-id="tree-#{block_index}" class="tree-item" t-att-data_index="block_index">
