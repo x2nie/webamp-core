@@ -272,6 +272,7 @@ function parser(tokens) {
         }
 
         if (token.value === 'extern' && nextis('keyword', 1)) {
+            const deprecated = next(-1) == 'deprecated'
             current++;
             token = tokens[current++];
             // const name = token.value;
@@ -287,6 +288,7 @@ function parser(tokens) {
                 type: 'ClassRegistry',
                 varType: token,
                 data,
+                deprecated,
             };
         }
         else if (token.value === 'extern') {
@@ -1491,6 +1493,7 @@ function transformer(ast) {
 
         ClassRegistry: {
             enter(node, parent) {
+                if(node.deprecated) return;
                 const alias= node.data[node.data.length -1].name;
                 ast._registry.push({
                     key: node.data[0].value,
@@ -1605,7 +1608,6 @@ function transformer(ast) {
                 if(node.uf) //? all apiCall only, ignore UserDefinedFunction
                     return;
                 if(node.name.toLowerCase() == 'system.onscriptloaded'){
-                    debugger
                     // const code = 'if(not(versionCheck())) return null;'
                     const code = 'ifnot(versionCheck()) return null;'
                     const wrapperAst = code2ast(code)[0]
@@ -1796,7 +1798,7 @@ function transformer(ast) {
 
                 if(uf){
                     const proc = ast._procedures.find(p => p.NAME = node.name.toUpperCase())
-                    const offset = proc.start - irByteLen
+                    const offset = proc.start - irByteLen - 5
                     irFun(`USERFUNCCALL ${offset} ${node.name}`)
                 } else {
 
