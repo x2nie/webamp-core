@@ -598,9 +598,32 @@ function parser(tokens) {
 
         if (token.type === 'keyword' && token.value === 'for') {
             current++;
+            const codeCave = walk().params
+
+            //* int i = 1;
+            const init = []
+            while(codeCave[0].type != 'Terminator'){
+                init.push(codeCave.splice(0,1)[0])
+            }
+            codeCave.splice(0,1); //? ";"
+            
+            //* i < 5;
+            const limit = []
+            while(codeCave[0].type != 'Terminator'){
+                limit.push(codeCave.splice(0,1)[0])
+            }
+            codeCave.splice(0,1); //? ";"
+
+            //* i++;
+            const stepper = codeCave
+
+
             var node = {
                 type: 'ForExpression',
-                expect: walk(),
+                // expect: walk(),
+                init: parseStatement(init),
+                limit: buildExpressionTree(limit),
+                stepper: buildExpressionTree(stepper),
                 body: [],
                 else: null,
             };
@@ -619,7 +642,7 @@ function parser(tokens) {
         if (token.type === 'keyword' && token.value == 'return') {
             // token = tokens[++current]
             current++;
-            token = nextis('semi') ? {type:'identifier', value:'NULL'} : walk();
+            token = nextis('semi') ? {type:'identifier', name:'NULL'} : walk();
             return {
                 type: 'Return',
                 value: token,
@@ -1184,6 +1207,7 @@ function transformer(ast) {
                     }
                     break;
             
+                case "Parameter":
                 case "LocalVar":
                     const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
                     //? force add
@@ -1193,10 +1217,10 @@ function transformer(ast) {
                     })
                     break;
                     
-                case "Parameter":
                 case "identifier":
                     // if(node.name=='MC_TARGET') debugger
                     const varName = node.name;
+                    if(!varName) debugger
                     if(!theVar){
                         theVar = ast._registry.find(cls => cls.ALIAS == varName.toUpperCase())
                         theVar && (theVar = setVariable(theVar))
