@@ -621,7 +621,7 @@ function parser(tokens) {
             var node = {
                 type: 'ForExpression',
                 // expect: walk(),
-                init: parseStatement(init),
+                init: parseStatement(init)[0],
                 limit: buildExpressionTree(limit),
                 stepper: buildExpressionTree(stepper),
                 body: [],
@@ -1001,6 +1001,15 @@ function traverser(ast, visitor) {
                 traverseArray(node.body, node);
                 break;
 
+            case 'ForExpression':
+                traverseNode(node.init, node);
+                methods.cap(node, parent); //? loop.jump target
+                traverseNode(node.limit, node);
+                methods.neck(node, parent); //? JUMPIF
+                traverseArray(node.body, node);
+                traverseNode(node.stepper, node);
+                break;
+
             case 'FunctionDeclaration':
                 traverseBackArray(node.parameters, node);
                 methods.stackProtection(node, parent); //? Code injection
@@ -1014,6 +1023,7 @@ function traverser(ast, visitor) {
                 traverseNode(node.right, node);
                 break;
 
+            case 'Return':
             case 'UnaryExpr':
             case 'NotExpression':
                 traverseNode(node.value, node);
@@ -1695,6 +1705,34 @@ function transformer(ast) {
             }
         },
 
+        ForExpression: {
+            enter(node, parent) {
+                irFun(`; //FOR () `)
+            },
+            
+            cap(node,parent){
+                const pos= theFun.ir.length;
+                ifStacks.push({pos, start:irByteLen})
+            },
+            neck(node,parent){
+                const pos= theFun.ir.length;
+                irFun(`JUMPIF <later.num> `)
+                ifStacks.push({pos, start:irByteLen})
+                // irFun(`<later.num> `)
+            },
+            exit(node,parent){
+                // irFun(`//eof.IF () `)
+                const mark = ifStacks.pop()
+                const finish = irByteLen - mark.start 
+                // debugger
+                theFun.ir[mark.pos] = `JUMPIF ${finish} `;
+                
+                const cap = ifStacks.pop()
+                const top = irByteLen - cap.start 
+                irFun(`JUMP ${top} `);
+            }
+        },
+
         ExpressionStatement:{
             // enter(node, parent) {
             //     // irFun(`//IF () `)
@@ -1755,9 +1793,13 @@ function transformer(ast) {
 
         Return: {
             enter(node, parent) {
-                // let variable = getVariable(node.value.value || node.value.name, node.value)
-                const variable = getVariable(node.value)
-                irFun(`PUSH ${variable.offset}`)
+                // // let variable = getVariable(node.value.value || node.value.name, node.value)
+                // const variable = getVariable(node.value)
+                // if(!variable || !variable.offset) debugger
+                // irFun(`PUSH ${variable.offset}`)
+            },
+            
+            exit(node, parent) {
                 irFun(`RET //${node.value.value}`)
             }
         },
