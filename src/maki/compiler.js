@@ -1140,6 +1140,19 @@ function transformer(ast) {
         // node.offset = ast._variables.length -1;
         return node
     }
+
+
+    function regString(node) {
+        if(node.type.toLowerCase() != 'string' || node.value == undefined) 
+            return;
+        let theStr = ast._strings.find(s => s.value == node.value)
+        if(!theStr){
+            ast._strings.push(node)   //? actually only need: {value, offset}
+            // theVar && setVariable(theVar)
+        }
+        return theStr
+    }
+
     
     function getVariable(node) {
         let theVar = theFun.vars[node.name] //? what is this?
@@ -1161,15 +1174,15 @@ function transformer(ast) {
                     break;
             
                 case "StringLiteral":
-                    theVar = ast._variables.find(v => v.literal && v.type == 'string' &&  v.value == node.value)
+                    theVar = ast._variables.find(v => v.literal && v.type == 'string' &&  v.value === node.value)
                     if(!theVar){
                         theVar = setVariable({...node, type: 'string', name:`#${node.value}`, literal:true})
-                        ast._strings.push(node.value) 
+                        // ast._strings.push({value: node.value, offset: theVar.offset}) 
+                        regString(theVar)
                     }
                     break;
             
                 case "LocalVar":
-                case "Parameter":
                     const classIndex = ast._registry.findIndex(reg=> reg.ALIAS == node.varType.toUpperCase())
                     //? force add
                     theVar = setVariable({...node, //type: node.varType,
@@ -1177,28 +1190,29 @@ function transformer(ast) {
                         classIndex,
                     })
                     break;
-
+                    
+                case "Parameter":
                 case "identifier":
+                    if(node.name=='MC_TARGET') debugger
                     const varName = node.name;
                     if(!theVar){
                         theVar = ast._registry.find(cls => cls.ALIAS == varName.toUpperCase())
-                        theVar && setVariable(theVar)
+                        theVar && (theVar = setVariable(theVar))
                     }
                     if(!theVar){
                         theVar = ast._defined.find(cls => cls.NAME == varName.toUpperCase())
                         if(theVar){
                             theVar.type = theVar.value? theVar.value.type : null;
                             theVar.value = theVar.value? theVar.value.value: null;
-                            setVariable(theVar)
+                            theVar = setVariable(theVar)
                         }
                     }
                     if(!theVar){
                         theVar = setVariable({...node, })
                     }
+                    regString(theVar)
                     break;
             }  
-            
-            
         }
 
         return theVar
@@ -1356,7 +1370,7 @@ function transformer(ast) {
                 ast._defined.push({
                     name: node.name,
                     NAME: node.name.toUpperCase(),
-                    isGlobal: true,
+                    // isGlobal: true,
                     isObject: 0,
                     value: node.value,
                     // type: node.type,
@@ -1763,11 +1777,9 @@ function transformer(ast) {
                     arg.legalType = parameter.name;
                     // switch (arg.type) {
                     //     case 'identifier':
-                    //         getVariable(arg.name, arg)
-                    //         break;
-
                     //     case 'NumberLiteral':
-                    //         getVariable(arg.value, arg)
+                    //     case 'StringLiteral':
+                    //         getVariable(arg)
                     //         break;
 
                     //     case 'CallExpression':

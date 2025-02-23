@@ -418,9 +418,8 @@ class Root extends Component {
         })
                 
         //? resource-string
-        const res = ast.variables.filter(v => v.type == 'string')
-        f.writeUint32LE(res.length); // 
-        res.forEach(r => {
+        f.writeUint32LE(ast.strings.length);
+        ast.strings.forEach(r => {
             f.writeUint32LE(r.offset)     //? var.offset 
             f.writePascalString(r.value || '' )
         })
