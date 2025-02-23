@@ -40,21 +40,16 @@ test('if', () => {
     expect(ast[0]).toEqual({
         "type": "IfExpression",
         "expect": {
-            "type": "Parameters",
-            "params": [
-                {
-                    "type": "identifier",
-                    "name": "now"
-                },
-                {
-                    "type": "symbol",
-                    "value": "<"
-                },
-                {
-                    "type": "NumberLiteral",
-                    "value": "5000"
-                }
-            ]
+            "type": "BinaryExpression",
+            "left": {
+                "name": "now",
+                "type": "identifier",
+            },
+            "operator": "<",
+            "right":  {
+                "type": "NumberLiteral",
+                "value": "5000",
+            },
         },
         "body": [
             {
@@ -64,7 +59,8 @@ test('if', () => {
                     "value": "0"
                 }
             }
-        ]
+        ], 
+        "else": []
     })
 })
 
@@ -75,21 +71,16 @@ test('if else', () => {
         {
             "type": "IfExpression",
             "expect": {
-                "type": "Parameters",
-                "params": [
-                    {
-                        "type": "identifier",
-                        "name": "now"
-                    },
-                    {
-                        "type": "symbol",
-                        "value": "<"
-                    },
-                    {
-                        "type": "NumberLiteral",
-                        "value": "5000"
-                    }
-                ]
+                "type": "BinaryExpression",
+                "left": {
+                    "name": "now",
+                    "type": "identifier",
+                },
+                "operator": "<",
+                "right":  {
+                    "type": "NumberLiteral",
+                    "value": "5000",
+                },
             },
             "body": [
                 {
@@ -99,26 +90,19 @@ test('if else', () => {
                         "value": "0"
                     }
                 }
-            ]
-        },
-        {
-            "type": "Terminator",
-            "value": ";"
-        },
-        {
-            "type": "ElseExpression",
-            "body": [
+            ],
+            "else": [
                 {
                     "type": "CallExpression",
                     "name": "songInfoTimer.setDelay",
-                    "arguments": [
+                    "arguments":  [
                         {
                             "type": "NumberLiteral",
-                            "value": "250"
-                        }
-                    ]
-                }
-            ]
+                            "value": "250",
+                        },
+                    ],
+                },
+            ],
         }
     ])
 })
@@ -130,13 +114,8 @@ test('return void', () => {
     expect(ast[0]).toEqual({
         "type": "IfExpression",
         "expect": {
-            "type": "Parameters",
-            "params": [
-                {
-                    "type": "NumberLiteral",
-                    "value": "1"
-                }
-            ]
+            "type": "NumberLiteral",
+            "value": "1"
         },
         "else": [],
         "body": [
