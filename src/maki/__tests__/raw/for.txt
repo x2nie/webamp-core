@@ -9,60 +9,60 @@ for (int i = 0; i < 5; i++) {
 =============================
 
 for (
-    int i = 0; 
-        #1486⯈ PUSH 51
-        #1491⯈ PUSH 8
-        #1496⯈ MOV
-        #1497⯈ POP
+        int i = 0; 
+            #1486⯈ PUSH 51
+            #1491⯈ PUSH 8
+            #1496⯈ MOV
+            #1497⯈ POP
         ;
 
-    ; next iteration goes her <---------------------------
-    i < 5; 
-        #1498⯈ PUSH 51
-        #1503⯈ PUSH 46  ;#=5
-        #1508⯈ LT
-        #1509⯈ JUMPIF 116 (raw) | adjusted: 1630
+        ; next iteration goes her <---------------------------
+        i < 5; 
+            #1498⯈ PUSH 51
+            #1503⯈ PUSH 46  ;#=5
+            #1508⯈ LT
+            #1509⯈ JUMPIF 116 (raw) | adjusted: 1630
         ;
 
-            rtn = getToken(sinfo, " ", i);
-                #1514⯈ PUSH 50
-                #1519⯈ PUSH 0
-                #1524⯈ PUSH 51  ;
-                #1529⯈ PUSH 52
-                #1534⯈ PUSH 48
-                #1539⯈ STRANGECALL 30
-                #1545⯈ MOV
-                #1546⯈ POP
-                ;
+    rtn = getToken(sinfo, " ", i);
+        #1514⯈ PUSH 50
+        #1519⯈ PUSH 0
+        #1524⯈ PUSH 51  ;
+        #1529⯈ PUSH 52
+        #1534⯈ PUSH 48
+        #1539⯈ STRANGECALL 30
+        #1545⯈ MOV
+        #1546⯈ POP
+        ;
 
-            searchResult = strsearch(rtn, "kbps");
-                #1547⯈ PUSH 49
-                #1552⯈ PUSH 0
-                #1557⯈ PUSH 53  ;"kbps"
-                #1562⯈ PUSH 50  :"
-                #1567⯈ STRANGECALL 31
-                #1573⯈ MOV
-                #1574⯈ POP
+    searchResult = strsearch(rtn, "kbps");
+        #1547⯈ PUSH 49
+        #1552⯈ PUSH 0
+        #1557⯈ PUSH 53  ;"kbps"
+        #1562⯈ PUSH 50  :"
+        #1567⯈ STRANGECALL 31
+        #1573⯈ MOV
+        #1574⯈ POP
 
-            if (searchResult>0) 
-                    #1575⯈ PUSH 49
-                    #1580⯈ PUSH 8
-                    #1585⯈ GT
-                    #1586⯈ JUMPIF 27 (raw) | adjusted: 1618
+    if (searchResult>0) 
+            #1575⯈ PUSH 49
+            #1580⯈ PUSH 8
+            #1585⯈ GT
+            #1586⯈ JUMPIF 27 (raw) | adjusted: 1618
 
-                return StrMid(rtn, 0, searchResult);
-                    #1591⯈ PUSH 0
-                    #1596⯈ PUSH 49
-                    #1601⯈ PUSH 8
-                    #1606⯈ PUSH 50
-                    #1611⯈ STRANGECALL 32
-                    #1617⯈ RET
+        return StrMid(rtn, 0, searchResult);
+            #1591⯈ PUSH 0
+            #1596⯈ PUSH 49
+            #1601⯈ PUSH 8
+            #1606⯈ PUSH 50
+            #1611⯈ STRANGECALL 32
+            #1617⯈ RET
 
-    ;endfor, continue loop
-    i++) { 
-        #1618⯈ PUSH 51
-        #1623⯈ POSTINC
-        #1624⯈ POP
-        #1625⯆ JUMP -132 (raw) | adjusted: 1498
+;endfor, continue loop
+i++) { 
+    #1618⯈ PUSH 51
+    #1623⯈ POSTINC
+    #1624⯈ POP
+    #1625⯆ JUMP -132 (raw) | adjusted: 1498
 
 #1630⯈
