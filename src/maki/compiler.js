@@ -1193,7 +1193,7 @@ function transformer(ast) {
                     
                 case "Parameter":
                 case "identifier":
-                    if(node.name=='MC_TARGET') debugger
+                    // if(node.name=='MC_TARGET') debugger
                     const varName = node.name;
                     if(!theVar){
                         theVar = ast._registry.find(cls => cls.ALIAS == varName.toUpperCase())
@@ -1582,6 +1582,7 @@ function transformer(ast) {
                 //? set container of bytecodes
                 const fun = {
                     name: node.name,
+                    NAME: node.name.toUpperCase(),
                     ir: [],
                     bytes: [],
                     vars: {},
@@ -1604,7 +1605,7 @@ function transformer(ast) {
                 if(node.uf) //? all apiCall only, ignore UserDefinedFunction
                     return;
                 if(node.name.toLowerCase() == 'system.onscriptloaded'){
-                    // debugger
+                    debugger
                     // const code = 'if(not(versionCheck())) return null;'
                     const code = 'ifnot(versionCheck()) return null;'
                     const wrapperAst = code2ast(code)[0]
@@ -1793,7 +1794,11 @@ function transformer(ast) {
                 //? after callExpr in params are validated, now this callExpr it self are regeistered to 
                 // getMethod(methodName, className, true);
 
-                if(!uf){
+                if(uf){
+                    const proc = ast._procedures.find(p => p.NAME = node.name.toUpperCase())
+                    const offset = proc.start - irByteLen
+                    irFun(`USERFUNCCALL ${offset} ${node.name}`)
+                } else {
 
                     //? non user-function, find class.varOffset
                     let variable = getVariable({type:'identifier', name:className})

@@ -356,6 +356,7 @@ class Root extends Component {
         // console.log(tokens)
         const ast = parser(tokens.filter(tk => tk != null & tk.type != 'comment')); document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2)
         const ast2 = transformer(ast); document.getElementById('transformed').innerText = JSON.stringify(ast2, null, 2);
+        document.getElementById('parsed').innerText = JSON.stringify(ast, null, 2); //? set new modified ast
         document.getElementById('variables').innerText = JSON.stringify(ast2.variables, null, 2)
         this.buildMaki(ast2);
     }
