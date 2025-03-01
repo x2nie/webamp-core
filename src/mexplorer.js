@@ -137,7 +137,7 @@ function assureUrl(){
 class Root extends Component {
   static template = xml`
     <div class="panel">
-      <select id="file-list" t-model="state.file">
+      <select id="file-list" t-model="state.file" t-if="!state.droppedFile">
         <option value="/assets/skins/SimpleTutorial/SongStopper">SongStopper</option>
         <option value="/assets/skins/SimpleTutorial/SongStopper-generated">SongStopper-output</option>
         <option value="/assets/skins/SimpleTutorial/test-script">script</option>
@@ -146,6 +146,7 @@ class Root extends Component {
         <option value="/assets/skins/SimpleTutorial/basicTests">basicTests</option>
         <option value="/assets/skins/SimpleTutorial/basicTests-generated">basicTests -generated</option>
       </select>
+      <input t-if="state.droppedFile" t-model="state.droppedFile" disabled="disabled"/>
     </div>
     <div class="body">
       <HexEdit increment="2"/>
@@ -157,8 +158,10 @@ class Root extends Component {
   setup() {
     // this.state = useState({binary:[], blocks:[]});
     const makiPath = localStorage.getItem("makiPath") || ''
-    this.state = useState({file: makiPath});
+    this.state = useState({file: makiPath, droppedFile:''});
     this.binary = useState(this.env.binary)
+
+    this.initDropZone()
     // onWillStart(async () => {
     //   const makiPath = assureUrl()
     //   // })
@@ -172,6 +175,42 @@ class Root extends Component {
     )
   }
 
+  initDropZone(){
+    const dropZone = document.documentElement
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("hover");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("hover");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("hover");
+        let data;
+
+        const file = e.dataTransfer.files[0];
+        // debugger
+        if (file && file.name.endsWith(".maki")) {
+          this.state.droppedFile = file.name;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                // preview.src = event.target.result;
+                // debugger
+                this._loadMakiBuffer(event.target.result)
+                // this.navbars[this.props.name].value = `url("${reader.result}")`;
+            };
+            // reader.readAsDataURL(file);
+            reader.readAsArrayBuffer(file);
+        // } else if (data = e.dataTransfer.getData("text")){
+        //     this.navbars[this.props.name].value = data;
+        } else {
+            alert("Please drop an *.maki file!");
+        }
+    });
+  }
   async loadMaki(makiPath){
   // fetch(makiPath).then(async (response) => {
     const response = await fetch(makiPath);
@@ -189,6 +228,18 @@ class Root extends Component {
       this.binary.blocks = parsedScriptXp.blocks
       console.log(parsedScriptXp)
     }
+  }
+
+  _loadMakiBuffer(buffer){
+    const data = new Uint8Array(buffer);
+    this.binary.data = [...data];
+    // console.log( new Uint8Array(scriptContents));
+    // const parsedScriptXp = parseMakiXp(scriptContents);
+    // const parsedScript1 = parseMaki1(scriptContents, makiPath);
+    const parsedScriptXp = parseMaki1(buffer);
+    // explore(parsedScriptXp, parsedScript1);
+    this.binary.blocks = parsedScriptXp.blocks
+    console.log(parsedScriptXp)
   }
 }
 
